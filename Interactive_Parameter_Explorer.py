@@ -418,8 +418,8 @@ with spectrum_tab:
 
                 if label_ions and selected_peptide is not None:
                     try:
-            # Remove '+' sign and any other non-numeric characters
-                        cleaned_charge_state = selected_charge_state.rstrip('+')  # Remove '+' sign if present
+           
+                        cleaned_charge_state = selected_charge_state.rstrip('+')  
                         precursor_charge = int(cleaned_charge_state) if cleaned_charge_state.isdigit() else None
 
             # Annotate spectrum
