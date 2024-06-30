@@ -4,7 +4,7 @@ import pandas as pd
 from scipy import signal
 from bokeh.models import ColumnDataSource, LabelSet, HoverTool, Range1d
 from bokeh.plotting import figure
-from pyteomics import mzml, pylab_aux
+from pyteomics import mzml, mass, parser
 import requests
 import io
 from scipy.interpolate import interp1d
@@ -36,7 +36,9 @@ def average_spectra(spectra, bin_width=None, filter_string=None):
     reference_scan = np.unique(spectra[0]['m/z array'])
     if bin_width is None:
         bin_width = np.min(np.diff(reference_scan))
-    reference_mz = np.arange(reference_scan[0], reference_scan[-1], bin_width)
+    scan_min = spectra[0]['scanList']['scan'][0]['scanWindowList']['scanWindow'][0]['scan window lower limit']
+    scan_max = spectra[0]['scanList']['scan'][0]['scanWindowList']['scanWindow'][0]['scan window upper limit']
+    reference_mz = np.arange(scan_min, scan_max, bin_width)
     merge_intensity = np.zeros_like(reference_mz)
 
     for scan in spectra:
@@ -53,8 +55,7 @@ def average_spectra(spectra, bin_width=None, filter_string=None):
 
     return avg_spec
 
-def interpolate_spectra(spectra, target_energies):
-    energies = [0, 5, 10, 15, 20]
+def interpolate_spectra(spectra, target_energies, energies=[0, 5, 10, 15, 20]):
     intensity_arrays = [spectrum['intensity array'] for spectrum in spectra]
     interpolated_spectra = {target_energy: [] for target_energy in target_energies}
 
@@ -69,6 +70,43 @@ def interpolate_spectra(spectra, target_energies):
             interpolated_spectra[target_energy].append(interpolated_intensity)
     
     return {k: np.array(v) for k, v in interpolated_spectra.items()}
+
+
+aa_mass = mass.std_aa_mass
+aa_mass['p'] = 79.966331  # phosphorylation (STY)
+aa_mass['ox'] = 15.994915  # oxidation (MW)
+aa_mass['d'] = 0.984016  # deamidation (NQ)
+aa_mass['am'] = -0.984016  # amidation (C-term)
+
+def get_fragments(sequence, fragment_ions, selected_charge_state):
+    fragments = []
+    _sequence = parser.parse(sequence)  # Assuming parser is defined somewhere
+
+    for ion in fragment_ions:
+        ion_type, pos = ion[0], int(ion[1:])
+        if ion_type in ('a', 'b', 'c'):
+            seq = ''.join(_sequence[:pos])
+        else:
+            seq = ''.join(_sequence[-pos:])
+        
+        # Calculate fragment mass
+        _mass = mass.fast_mass2(seq, ion_type=ion_type, charge=selected_charge_state, aa_mass=aa_mass)
+        
+        # Determine ion label based on ion type
+        if ion_type in ('a', 'b', 'c'):
+            ion_label = ion_type + str(pos)
+        elif ion_type == 'y':
+            ion_label = ion_type + str(len(_sequence) - pos + 1)
+        elif ion_type == 'z':
+            ion_label = ion_type + str(len(_sequence) - pos + 1)
+        elif ion_type == 'x':
+            ion_label = ion_type + str(pos)
+        else:
+            ion_label = ion  # Handle any other types as they are
+        
+        fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': ion_type})
+
+    return fragments
 
 
 def load_predefined_data(peptide, charge_state, resolution, energy_ramp, isolation=None):
@@ -196,7 +234,10 @@ st.sidebar.markdown("This is an interactive parameter explorer for mass spectrom
 peptide_options = {
     "MRFA": {
         "charge_states": ["1+", "2+"],
-        "resolutions": ["Enhanced", "Normal", "Turbo", "Zoom"],
+        "resolutions": {
+            "1+": ["Enhanced", "Turbo", "Zoom"],
+            "2+": ["Enhanced", "Normal", "Turbo", "Zoom"]
+        },
         "energy_ramps": {
             "1+": ["Iso 1"],
             "2+": ["Iso 1", "Iso 2", "Iso 3"]
@@ -227,26 +268,31 @@ peptide_options = {
     }
 }
 
-
+# Streamlit sidebar widgets
 use_predefined_data = st.sidebar.checkbox("Use Predefined Data", value=True, help="Toggle to use predefined data")
-
 selected_peptide = st.sidebar.selectbox("Select Peptide", list(peptide_options.keys()))
 
 def get_options(selected_peptide, option_type):
     return peptide_options[selected_peptide][option_type]
 
-# Selectbox for choosing charge state
 selected_charge_state = st.sidebar.selectbox("Select Charge State", get_options(selected_peptide, "charge_states"))
 
+def get_resolutions(selected_peptide, selected_charge_state):
+    if selected_peptide == "MRFA":
+        if selected_charge_state in peptide_options[selected_peptide]["resolutions"]:
+            return peptide_options[selected_peptide]["resolutions"][selected_charge_state]
+        else:
+            return []  # Return an empty list if no valid options are found
+    else:
+        return peptide_options[selected_peptide]["resolutions"]
+
+selected_resolution = st.sidebar.selectbox("Select Resolution", get_resolutions(selected_peptide, selected_charge_state))
 
 def get_energy_ramp_options(selected_peptide, selected_charge_state):
     if selected_peptide in peptide_options and selected_charge_state in peptide_options[selected_peptide]["energy_ramps"]:
         return peptide_options[selected_peptide]["energy_ramps"][selected_charge_state]
     else:
         return ["Iso 1"]  # Default option if no valid options are found
-
-# Selectbox for choosing resolution
-selected_resolution = st.sidebar.selectbox("Select Resolution/Scan Rate", peptide_options[selected_peptide]["resolutions"])
 
 # Selectbox for choosing energy collision ramp
 selected_energy_ramp_options = get_energy_ramp_options(selected_peptide, selected_charge_state)
@@ -347,16 +393,17 @@ with spectrum_tab:
     with scol1:
         if reader is not None:
             st.markdown("### Settings")
-            scan_filter = st.number_input("Select Collision Energy", min_value=0, max_value=20, value=10, step=1, help="Filter scans by collision energy.")
+            _available_energies = [0, 5, 10, 15, 20]
+            available_energies = [e for e in _available_energies if e in scan_filter_list]
+            scan_filter = st.number_input("Select Collision Energy", min_value=available_energies[0], max_value=available_energies[-1], value=10, step=1, help="Filter scans by collision energy.")
 
             if scan_filter in scan_filter_list:
                 scan_range = (scan_filter_list[scan_filter][0], scan_filter_list[scan_filter][-1])
                 spectra = [reader[i] for i in range(scan_range[0], scan_range[1] + 1)]
                 selected_scan = average_spectra(spectra, filter_string=scan_filter)
             else:
-                available_energies = [0, 5, 10, 15, 20]
-                spectra = [reader[scan_filter_list[energy][0]] for energy in available_energies if energy in scan_filter_list]
-                interpolated_spectra = interpolate_spectra(spectra, [scan_filter])
+                spectra = [average_spectra(reader[scan_filter_list[energy]]) for energy in available_energies]
+                interpolated_spectra = interpolate_spectra(spectra, [scan_filter], energies=available_energies)
                 selected_scan = {
                     'm/z array': spectra[0]['m/z array'],
                     'intensity array': interpolated_spectra[scan_filter],
@@ -418,23 +465,20 @@ with spectrum_tab:
 
                 if label_ions and selected_peptide is not None:
                     try:
-           
-                        cleaned_charge_state = selected_charge_state.rstrip('+')  
-                        precursor_charge = int(cleaned_charge_state) if cleaned_charge_state.isdigit() else None
+                        cleaned_charge_state = int(selected_charge_state.rstrip('+'))  # Remove '+' and convert to integer
 
-            # Annotate spectrum
-                        p = pylab_aux.annotate_spectrum(selected_scan, selected_peptide, precursor_charge=precursor_charge, ion_types=('b', 'y'), ftol=0.1, centroided=False)
-                        print("Annotation successful:", p)
+    # Use get_fragments to calculate fragment m/z values
+                        fragment_ions = ['y1', 'y2', 'y3', 'y4', 'b1', 'b2', 'b3', 'b4']  # Customize this as needed
+                        fragments = get_fragments(selected_peptide, fragment_ions, cleaned_charge_state)
 
-            # Prepare data for ion labels
+                        # Annotate spectrum with theoretical fragments
                         ions_data = {
-                            'x': [ion['mz'] for ion in p['annotations']],
-                            'y': [selected_scan['intensity array'][int(ion['index'])] for ion in p['annotations']],  # Ensure index is cast to int
-                            'ion_type': [ion['type'] for ion in p['annotations']]
-            }
+                            'x': [frag['m/z'] for frag in fragments],
+                            'y': [max(selected_scan['intensity array']) * 0.8] * len(fragments),  
+                            'ion_type': [frag['ion'] for frag in fragments]
+                        }
                         ions_source = ColumnDataSource(data=ions_data)
 
-            # Add ion labels to the plot
                         ion_labels = LabelSet(x='x', y='y', text='ion_type', source=ions_source, text_font_size='8pt', text_color='blue')
                         spectrum_plot.add_layout(ion_labels)
 
