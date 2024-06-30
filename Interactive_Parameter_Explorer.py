@@ -95,12 +95,8 @@ def get_fragments(sequence, fragment_ions, selected_charge_state):
         # Determine ion label based on ion type
         if ion_type in ('a', 'b', 'c'):
             ion_label = ion_type + str(pos)
-        elif ion_type == 'y':
+        elif ion_type in ('y', 'z', 'x'):
             ion_label = ion_type + str(len(_sequence) - pos + 1)
-        elif ion_type == 'z':
-            ion_label = ion_type + str(len(_sequence) - pos + 1)
-        elif ion_type == 'x':
-            ion_label = ion_type + str(pos)
         else:
             ion_label = ion  # Handle any other types as they are
         
@@ -108,6 +104,7 @@ def get_fragments(sequence, fragment_ions, selected_charge_state):
 
     return fragments
 
+MRFA_ions = {}
 
 def load_predefined_data(peptide, charge_state, resolution, energy_ramp, isolation=None):
     file_map = {
@@ -314,13 +311,13 @@ spectrum_tab, instructions_tab = st.tabs(["Spectrum", "Instructions"])
 
 with instructions_tab:  
     
-    image_predefined_data = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data%20Selection.png'
-    image_user_data = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Drag%20and%20drop%20data.png'
-    image_parameter_selection = 'https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/raw/main/Parameter%20selection%20.png'
-    image_setting_selection = 'https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/raw/main/Settings%20selection%20.png'
-    image_plot_expansion = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/View%20fullscreen.png'
-    image_zoom_function =  'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Zoom%20function.png'
-    image_hover_function = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Hover%20function.png'
+    image_predefined_data = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/Data%20Selection.png'
+    image_user_data = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/Drag%20and%20drop%20data.png'
+    image_parameter_selection = 'https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/raw/main/Instruction%20images/Parameter%20selection%20.png'
+    image_setting_selection = 'https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/raw/main/Instruction%20images/Settings%20selection%20.png'
+    image_plot_expansion = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/View%20fullscreen.png'
+    image_zoom_function =  'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/Zoom%20function.png'
+    image_hover_function = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/Hover%20function.png'
 
     st.header("Instructions")
     st.markdown("Instructions for the use of the Interactive Parameter Explorer")
@@ -385,9 +382,8 @@ else:
 # Initialize the labels_on variable to True
 labels_on = True 
 label_ions = True
+
 # Streamlit layout
-
-
 with spectrum_tab: 
     scol1, scol2 = st.columns([0.3, 0.7])
     with scol1:
@@ -468,7 +464,7 @@ with spectrum_tab:
                         cleaned_charge_state = int(selected_charge_state.rstrip('+'))  # Remove '+' and convert to integer
 
     # Use get_fragments to calculate fragment m/z values
-                        fragment_ions = ['y1', 'y2', 'y3', 'y4', 'b1', 'b2', 'b3', 'b4']  # Customize this as needed
+                        fragment_ions = ['y1', 'y2', 'y3', 'y4', 'b1', 'b2', 'b3', 'b4']  
                         fragments = get_fragments(selected_peptide, fragment_ions, cleaned_charge_state)
 
                         # Annotate spectrum with theoretical fragments
