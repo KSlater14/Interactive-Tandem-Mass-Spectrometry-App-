@@ -37,10 +37,10 @@ def get_centroid(spectrum, peaks, properties):
 # Define the function to load mzML data
 def load_mzml_data(peptide):
     file_map = {
-        'MRFA': 'https://raw.githubusercontent.com/KSlater14/app1/main/12Mar2024_MJ_MRFA_full_scan_enhanced.mzML',
-        'Bradykinin': 'https://raw.githubusercontent.com/KSlater14/app1/main/13Mar2024_MJ_bradykinin.mzML',
-        'GRGDS': 'https://raw.githubusercontent.com/KSlater14/app1/main/21Mar2024_MJ_GRGDS_full_ms.mzML',
-        'SDGRG': 'https://raw.githubusercontent.com/KSlater14/app1/main/21Mar2024_MJ_SDGRG_full_ms.mzML'
+        'MRFA': 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data/MRFA/12Mar2024_MJ_MRFA_full_scan_enhanced.mzML',
+        'Bradykinin': 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data/Bradykinin/13Mar2024_MJ_bradykinin.mzML',
+        'GRGDS': 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data/GRGDS/21Mar2024_MJ_GRGDS_full_ms.mzML',
+        'SDGRG': 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data/SDGRG/21Mar2024_MJ_SDGRG_full_ms.mzML'
     }
     file_url = file_map.get(peptide)
     if file_url:
