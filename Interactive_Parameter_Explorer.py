@@ -457,23 +457,23 @@ with spectrum_tab:
                     labels = LabelSet(x='x', y='y', text='cent', source=peaks_source, text_font_size='8pt', text_color='black')
                     spectrum_plot.add_layout(labels)
 
-                if label_ions and selected_peptide is not None:
+                if label_ions and selected_peptide:
                     try:
                         cleaned_charge_state = int(selected_charge_state.rstrip('+'))  # Remove '+' and convert to integer
 
     # Use get_fragments to calculate fragment m/z values
-                        fragment_ions = ['y1', 'y2', 'y3', 'y4', 'b1', 'b2', 'b3', 'b4']  
+                        fragment_ions = ['a1', 'a2', 'a3', 'a4', 'b1', 'b2', 'b3', 'b4', 'c1', 'c2', 'c3', 'c4', 'x1', 'x2', 'x3', 'x4', 'y1', 'y2', 'y3', 'y4', 'z1', 'z2', 'z3', 'z4']  
                         fragments = get_fragments(selected_peptide, fragment_ions, cleaned_charge_state)
-
+                           
                         # Annotate spectrum with theoretical fragments
                         ions_data = {
                             'x': [frag['m/z'] for frag in fragments],
-                            'y': [max(selected_scan['intensity array']) * 0.8] * len(fragments),  
+                            'y': [selected_scan['intensity array'][np.argmin(np.abs(selected_scan['m/z array'] - frag['m/z']))] * 1.05 for frag in fragments],
                             'ion_type': [frag['ion'] for frag in fragments]
                         }
                         ions_source = ColumnDataSource(data=ions_data)
 
-                        ion_labels = LabelSet(x='x', y='y', text='ion_type', source=ions_source, text_font_size='8pt', text_color='blue')
+                        ion_labels = LabelSet(x='x', y='y', text='ion_type', source=ions_source, text_font_size='8pt', text_color='blue', y_offset=8)
                         spectrum_plot.add_layout(ion_labels)
 
                     except ValueError as ve:
@@ -481,7 +481,7 @@ with spectrum_tab:
                     except Exception as e:
                         print(f"Error annotating spectrum with peptide: {selected_peptide}. Error: {e}")
 
-                return spectrum_plot
+                    return spectrum_plot
 
     with scol2:
         if reader is not None:
