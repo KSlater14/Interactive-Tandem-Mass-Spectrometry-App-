@@ -104,7 +104,6 @@ def get_fragments(sequence, fragment_ions, selected_charge_state):
 
     return fragments
 
-MRFA_ions = {}
 
 def load_predefined_data(peptide, charge_state, resolution, energy_ramp, isolation=None):
     file_map = {
