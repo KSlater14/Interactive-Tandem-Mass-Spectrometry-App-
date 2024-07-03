@@ -379,7 +379,7 @@ else:
 
 # Initialize the labels_on variable to True
 labels_on = True 
-label_ions = True
+label_ions = False
 
 # Streamlit layout
 with spectrum_tab: 
@@ -412,10 +412,10 @@ with spectrum_tab:
             # Plot spectrum function
             def plot_spectrum(selected_scan, labels_on, label_ions, selected_peptide):
                 spectrum_plot = figure(
-                x_axis_label='m/z',
-                y_axis_label='intensity',
-                tools='pan,box_zoom,xbox_zoom,reset,save',
-                active_drag='xbox_zoom'
+                    x_axis_label='m/z',
+                    y_axis_label='intensity',
+                    tools='pan,box_zoom,xbox_zoom,reset,save',
+                    active_drag='xbox_zoom'
     )
 
                 spectrum_plot.left[0].formatter.use_scientific = True
@@ -457,8 +457,7 @@ with spectrum_tab:
                     labels = LabelSet(x='x', y='y', text='cent', source=peaks_source, text_font_size='8pt', text_color='black')
                     spectrum_plot.add_layout(labels)
 
-                if label_ions and selected_peptide:
-                    try:
+                if label_ions:
                         cleaned_charge_state = int(selected_charge_state.rstrip('+'))  # Remove '+' and convert to integer
 
     # Use get_fragments to calculate fragment m/z values
@@ -476,12 +475,12 @@ with spectrum_tab:
                         ion_labels = LabelSet(x='x', y='y', text='ion_type', source=ions_source, text_font_size='8pt', text_color='blue', y_offset=8)
                         spectrum_plot.add_layout(ion_labels)
 
-                    except ValueError as ve:
-                        print(f"Error: Invalid precursor charge value '{selected_charge_state}'. {ve}")
-                    except Exception as e:
-                        print(f"Error annotating spectrum with peptide: {selected_peptide}. Error: {e}")
+                        print(type(spectrum_plot))  # Verify it's a Bokeh figure object
+                        print(spectrum_plot)        # Check its content
 
-                    return spectrum_plot
+                return spectrum_plot
+                    
+       # Check its content
 
     with scol2:
         if reader is not None:

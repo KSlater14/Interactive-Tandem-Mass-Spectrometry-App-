@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from bokeh.plotting import figure
 from bokeh.models import HoverTool, ColumnDataSource, LabelSet
-from pyteomics import mzml
+from pyteomics import mzml, parser, mass
 import requests
 import io
 from scipy import signal
@@ -33,6 +33,38 @@ def get_centroid(spectrum, peaks, properties):
         total_intensity = np.sum(intensity_values)
         centroids[i] = weighted_mz_sum / total_intensity 
     return centroids
+
+aa_mass = mass.std_aa_mass
+aa_mass['p'] = 79.966331  # phosphorylation (STY)
+aa_mass['ox'] = 15.994915  # oxidation (MW)
+aa_mass['d'] = 0.984016  # deamidation (NQ)
+aa_mass['am'] = -0.984016  # amidation (C-term)
+
+def get_fragments(sequence, fragment_ions, selected_charge_state):
+    fragments = []
+    _sequence = parser.parse(sequence)  # Assuming parser is defined somewhere
+
+    for ion in fragment_ions:
+        ion_type, pos = ion[0], int(ion[1:])
+        if ion_type in ('a', 'b', 'c'):
+            seq = ''.join(_sequence[:pos])
+        else:
+            seq = ''.join(_sequence[-pos:])
+        
+        # Calculate fragment mass
+        _mass = mass.fast_mass2(seq, ion_type=ion_type, charge=selected_charge_state, aa_mass=aa_mass)
+        
+        # Determine ion label based on ion type
+        if ion_type in ('a', 'b', 'c'):
+            ion_label = ion_type + str(pos)
+        elif ion_type in ('y', 'z', 'x'):
+            ion_label = ion_type + str(len(_sequence) - pos + 1)
+        else:
+            ion_label = ion  # Handle any other types as they are
+        
+        fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': ion_type})
+
+    return fragments
 
 # Define the function to load mzML data
 def load_mzml_data(peptide):
@@ -83,6 +115,7 @@ with Instruction_tab:
     st.write("""
     - Once plotted, the only settings that can be changed is whether the user wants to 'Show m/z Labels', 
              which can be selected via the checkbox. 
+             A checkbox can be selected to annotate the fragments with the ions within the spectrum. 
     - The plot has various interactive features that allows the user to undertake a thorough exploration. These features include:
    
     - The expansion of the plot to a full screen.""")
@@ -147,6 +180,11 @@ peptide_options = ["MRFA", "Bradykinin", "GRGDS", "SDGRG"]
 selected_peptide = st.sidebar.selectbox("Select Peptide", peptide_options)
 
 show_labels = st.sidebar.checkbox("Show m/z Labels", value=False)
+
+
+
+
+
 
 with Spectrum_tab:
     spectra = load_mzml_data(selected_peptide)
