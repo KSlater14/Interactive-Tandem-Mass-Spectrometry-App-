@@ -183,9 +183,6 @@ show_labels = st.sidebar.checkbox("Show m/z Labels", value=False)
 
 
 
-
-
-
 with Spectrum_tab:
     spectra = load_mzml_data(selected_peptide)
     if spectra is not None:
