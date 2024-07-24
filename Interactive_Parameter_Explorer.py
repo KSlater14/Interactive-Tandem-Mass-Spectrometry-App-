@@ -78,31 +78,54 @@ aa_mass['ox'] = 15.994915  # oxidation (MW)
 aa_mass['d'] = 0.984016  # deamidation (NQ)
 aa_mass['am'] = -0.984016  # amidation (C-term)
 
-def get_fragments(sequence, fragment_ions, selected_charge_state):
+def get_fragments(sequence, fragment_ions, selected_charge_state, peaks_data):
     fragments = []
-    _sequence = parser.parse(sequence)  # Assuming parser is defined somewhere
+    _sequence = parser.parse(sequence)  
+    
+    pep_length = len(_sequence)
+    print(f"Peptide length: {pep_length}")
 
-    for ion in fragment_ions:
-        ion_type, pos = ion[0], int(ion[1:])
-        if ion_type in ('a', 'b', 'c'):
+    neutral_losses = {
+        '': 0, 
+        '-H20': -18.01528, 
+        '-NH3': -17.02655
+    }
+
+    def is_in_peaks_data(mass):
+        tolerance = 0.1
+        return any(abs(mass - peak) <= tolerance for peak in peaks_data)
+
+    for ion_type in fragment_ions:
+        if ion_type[0] not in ('b', 'y'):
+            continue  # Skip any ion types that are not 'b' or 'y'
+    
+        pos = int(ion_type[1:])
+        
+        if pos > pep_length:
+            continue
+       
+        if ion_type[0] == 'b':
             seq = ''.join(_sequence[:pos])
-        else:
+        elif ion_type[0] == 'y':
             seq = ''.join(_sequence[-pos:])
         
-        # Calculate fragment mass
-        _mass = mass.fast_mass2(seq, ion_type=ion_type, charge=selected_charge_state, aa_mass=aa_mass)
-        
-        # Determine ion label based on ion type
-        if ion_type in ('a', 'b', 'c'):
-            ion_label = ion_type + str(pos)
-        elif ion_type in ('y', 'z', 'x'):
-            ion_label = ion_type + str(len(_sequence) - pos + 1)
-        else:
-            ion_label = ion  # Handle any other types as they are
-        
-        fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': ion_type})
 
+        for charge in range(1, selected_charge_state + 1):
+            for loss, mass_diff in neutral_losses.items():
+                # Calculate fragment mass with potential neutral loss
+                _mass = mass.fast_mass2(seq, ion_type=ion_type[0], charge=charge, aa_mass=aa_mass) + mass_diff
+
+                # Determine ion label based on ion type and neutral loss
+                ion_label = ion_type + loss
+
+                if is_in_peaks_data(_mass):
+                        fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': ion_type})
+                        print(f"Annotated fragment: {ion_label}, m/z: {_mass}")
+
+        
     return fragments
+
+
 
 
 def load_predefined_data(peptide, charge_state, resolution, energy_ramp, isolation=None):
@@ -379,7 +402,7 @@ else:
 
 # Initialize the labels_on variable to True
 labels_on = True 
-label_ions = False
+label_ions = True
 
 # Streamlit layout
 with spectrum_tab: 
@@ -407,7 +430,7 @@ with spectrum_tab:
 
             label_threshold = st.number_input("Label Threshold (%)", min_value=0, value=2, help="Label peaks with intensity above threshold% of maximum.")
             labels_on = st.checkbox("Show m/z labels", help="Display all peak labels on plot.", value=True)
-            label_ions = st.checkbox("Annotate Spectrum", help="Display all fragment labels on plot", value=True)
+            label_ions = st.checkbox("Annotate Spectrum", help="Display all fragment labels on plot", value=False)
             
             # Plot spectrum function
             def plot_spectrum(selected_scan, labels_on, label_ions, selected_peptide):
@@ -461,8 +484,8 @@ with spectrum_tab:
                         cleaned_charge_state = int(selected_charge_state.rstrip('+'))  # Remove '+' and convert to integer
 
     # Use get_fragments to calculate fragment m/z values
-                        fragment_ions = ['a1', 'a2', 'a3', 'a4', 'b1', 'b2', 'b3', 'b4', 'c1', 'c2', 'c3', 'c4', 'x1', 'x2', 'x3', 'x4', 'y1', 'y2', 'y3', 'y4', 'z1', 'z2', 'z3', 'z4']  
-                        fragments = get_fragments(selected_peptide, fragment_ions, cleaned_charge_state)
+                        fragment_ions = ['b1', 'b2', 'b3', 'b4', 'y1', 'y2', 'y3', 'y4']  
+                        fragments = get_fragments(selected_peptide, fragment_ions, cleaned_charge_state, selected_scan['m/z array'])
                            
                         # Annotate spectrum with theoretical fragments
                         ions_data = {
@@ -475,8 +498,8 @@ with spectrum_tab:
                         ion_labels = LabelSet(x='x', y='y', text='ion_type', source=ions_source, text_font_size='8pt', text_color='blue', y_offset=8)
                         spectrum_plot.add_layout(ion_labels)
 
-                        print(type(spectrum_plot))  # Verify it's a Bokeh figure object
-                        print(spectrum_plot)        # Check its content
+                        print(type(spectrum_plot))  
+                        print(spectrum_plot)        
 
                 return spectrum_plot
                     
