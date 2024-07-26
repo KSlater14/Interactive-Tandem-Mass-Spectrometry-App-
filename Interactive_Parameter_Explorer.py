@@ -87,7 +87,7 @@ def get_fragments(sequence, fragment_ions, selected_charge_state, peaks_data):
 
     neutral_losses = {
         '': 0, 
-        '-H20': -18.01528, 
+        '-H2O': -18.01528, 
         '-NH3': -17.02655
     }
 
@@ -485,7 +485,7 @@ with spectrum_tab:
 
     # Use get_fragments to calculate fragment m/z values
                         fragment_ions = ['b1', 'b2', 'b3', 'b4', 'y1', 'y2', 'y3', 'y4']  
-                        fragments = get_fragments(selected_peptide, fragment_ions, cleaned_charge_state, selected_scan['m/z array'])
+                        fragments = get_fragments(selected_peptide, fragment_ions, cleaned_charge_state, _peak_centroids)
                            
                         # Annotate spectrum with theoretical fragments
                         ions_data = {
