@@ -78,7 +78,7 @@ aa_mass['ox'] = 15.994915  # oxidation (MW)
 aa_mass['d'] = 0.984016  # deamidation (NQ)
 aa_mass['am'] = -0.984016  # amidation (C-term)
 
-def get_fragments(sequence, selected_charge_state, peaks_data):
+def get_fragments(sequence, selected_charge_state, peaks_data, ion_types=('b', 'y'):
     fragments = []
     _sequence = parser.parse(sequence)  
 
@@ -96,11 +96,11 @@ def get_fragments(sequence, selected_charge_state, peaks_data):
         return any(abs(mass - peak) <= tolerance for peak in peaks_data)
 
     for pos in range(1, pep_length):
-        for ion_type in ('b', 'y'):
+        for ion_type in ion_types:
        
-            if ion_type[0] == 'b':
+            if ion_type[0] in ('a', 'b', 'c'):
                 seq = ''.join(_sequence[:pos])
-            elif ion_type[0] == 'y':
+            elif ion_type[0] in ('x', 'y', 'z'):
                 seq = ''.join(_sequence[-pos:])
             
 
