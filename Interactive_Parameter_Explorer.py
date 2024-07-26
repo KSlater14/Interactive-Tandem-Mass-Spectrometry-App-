@@ -491,7 +491,7 @@ with spectrum_tab:
 
                 if label_ions:
                         cleaned_charge_state = int(selected_charge_state.rstrip('+'))  # Remove '+' and convert to integer
-                       
+
                         fragments = get_fragments(peptide_options[selected_peptide]['sequence'], cleaned_charge_state, _peak_centroids)
                            
                         # Annotate spectrum with theoretical fragments
