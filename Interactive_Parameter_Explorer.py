@@ -78,10 +78,10 @@ aa_mass['ox'] = 15.994915  # oxidation (MW)
 aa_mass['d'] = 0.984016  # deamidation (NQ)
 aa_mass['am'] = -0.984016  # amidation (C-term)
 
-def get_fragments(sequence, fragment_ions, selected_charge_state, peaks_data):
+def get_fragments(sequence, selected_charge_state, peaks_data):
     fragments = []
     _sequence = parser.parse(sequence)  
-    
+
     pep_length = len(_sequence)
     print(f"Peptide length: {pep_length}")
 
@@ -92,41 +92,45 @@ def get_fragments(sequence, fragment_ions, selected_charge_state, peaks_data):
     }
 
     def is_in_peaks_data(mass):
-        tolerance = 0.1
+        tolerance = 0.2
         return any(abs(mass - peak) <= tolerance for peak in peaks_data)
 
-    for ion_type in fragment_ions:
-        if ion_type[0] not in ('b', 'y'):
-            continue  # Skip any ion types that are not 'b' or 'y'
-    
-        pos = int(ion_type[1:])
-        
-        if pos > pep_length:
-            continue
+    for pos in range(1, pep_length):
+        for ion_type in ('b', 'y'):
        
-        if ion_type[0] == 'b':
-            seq = ''.join(_sequence[:pos])
-        elif ion_type[0] == 'y':
-            seq = ''.join(_sequence[-pos:])
-        
+            if ion_type[0] == 'b':
+                seq = ''.join(_sequence[:pos])
+            elif ion_type[0] == 'y':
+                seq = ''.join(_sequence[-pos:])
+            
 
-        for charge in range(1, selected_charge_state + 1):
-            for loss, mass_diff in neutral_losses.items():
-                # Calculate fragment mass with potential neutral loss
-                _mass = mass.fast_mass2(seq, ion_type=ion_type[0], charge=charge, aa_mass=aa_mass) + mass_diff
+            for charge in range(1, selected_charge_state + 1):
+                for loss, mass_diff in neutral_losses.items():
+                    # Calculate fragment mass with potential neutral loss
+                    _mass = mass.fast_mass2(seq, ion_type=ion_type, charge=charge, aa_mass=aa_mass) + (mass_diff / charge)  #need to account for charge state with losses
 
-                # Determine ion label based on ion type and neutral loss
-                ion_label = ion_type + loss
+                    # Determine ion label based on ion type and neutral loss
+                    ion_label = ion_type + str(pos) + loss + "+"*charge  #adds charge to ion labels
 
-                if is_in_peaks_data(_mass):
-                        fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': ion_type})
-                        print(f"Annotated fragment: {ion_label}, m/z: {_mass}")
+                    if is_in_peaks_data(_mass):
+                            fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': ion_type})
+                            print(f"Annotated fragment: {ion_label}, m/z: {_mass}")
 
+    # precursor ion annotation
+    for charge in range(1, selected_charge_state + 1):
+        for loss, mass_diff in neutral_losses.items():
+            # Calculate fragment mass with potential neutral loss
+            seq = ''.join(_sequence)
+            _mass = mass.fast_mass2(seq, ion_type="M", charge=charge, aa_mass=aa_mass) +  (mass_diff / charge)
+
+            # Determine ion label based on ion type and neutral loss
+            ion_label = "M" + loss + "+"*charge
+
+            if is_in_peaks_data(_mass):
+                    fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': "M"})
+                    print(f"Annotated fragment: {ion_label}, m/z: {_mass}")
         
     return fragments
-
-
-
 
 def load_predefined_data(peptide, charge_state, resolution, energy_ramp, isolation=None):
     file_map = {
@@ -251,6 +255,7 @@ st.sidebar.markdown("This is an interactive parameter explorer for mass spectrom
 
 peptide_options = {
     "MRFA": {
+        "sequence": "MRFA",
         "charge_states": ["1+", "2+"],
         "resolutions": {
             "1+": ["Enhanced", "Turbo", "Zoom"],
@@ -262,6 +267,7 @@ peptide_options = {
         }
     },
     "GRGDS": {
+        "sequence": "GRGDS",
         "charge_states": ["1+", "2+"],
         "resolutions": ["Normal", "Turbo", "Zoom", "Enhanced"],
         "energy_ramps": {
@@ -270,16 +276,19 @@ peptide_options = {
         }
     },
     "SDGRG": {
+        "sequence": "SDGRG",
         "charge_states": ["1+", "2+"],
         "resolutions": ["Enhanced", "Normal", "Turbo", "Zoom"],
         "energy_ramps": ["Iso 1"]
     },
     "Bradykinin": {
+        "sequence": "RPPGFSPFR",
         "charge_states": ["2+", "3+"],
         "resolutions": ["Enhanced", "Normal", "Turbo", "Zoom"],
         "energy_ramps": ["Iso 1"]
     },
     "Substance_P": {
+        "sequence": "RPKPQQFFGLamM",
         "charge_states": ["2+", "3+"],
         "resolutions": ["Enhanced", "Normal", "Zoom", "Turbo"],
         "energy_ramps": ["Iso 1"]
@@ -484,8 +493,8 @@ with spectrum_tab:
                         cleaned_charge_state = int(selected_charge_state.rstrip('+'))  # Remove '+' and convert to integer
 
     # Use get_fragments to calculate fragment m/z values
-                        fragment_ions = ['b1', 'b2', 'b3', 'b4', 'y1', 'y2', 'y3', 'y4']  
-                        fragments = get_fragments(selected_peptide, fragment_ions, cleaned_charge_state, _peak_centroids)
+                        #fragment_ions = ['b1', 'b2', 'b3', 'b4', 'y1', 'y2', 'y3', 'y4']  
+                        fragments = get_fragments(peptide_options[selected_peptide]['sequence'], fragment_ions, cleaned_charge_state, _peak_centroids)
                            
                         # Annotate spectrum with theoretical fragments
                         ions_data = {
