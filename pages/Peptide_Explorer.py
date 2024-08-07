@@ -40,30 +40,58 @@ aa_mass['ox'] = 15.994915  # oxidation (MW)
 aa_mass['d'] = 0.984016  # deamidation (NQ)
 aa_mass['am'] = -0.984016  # amidation (C-term)
 
-def get_fragments(sequence, fragment_ions, selected_charge_state):
+def get_fragments(sequence, selected_charge_state, peaks_data, ion_types=('b', 'y')):
     fragments = []
-    _sequence = parser.parse(sequence)  # Assuming parser is defined somewhere
+    _sequence = parser.parse(sequence)  
 
-    for ion in fragment_ions:
-        ion_type, pos = ion[0], int(ion[1:])
-        if ion_type in ('a', 'b', 'c'):
-            seq = ''.join(_sequence[:pos])
-        else:
-            seq = ''.join(_sequence[-pos:])
-        
-        # Calculate fragment mass
-        _mass = mass.fast_mass2(seq, ion_type=ion_type, charge=selected_charge_state, aa_mass=aa_mass)
-        
-        # Determine ion label based on ion type
-        if ion_type in ('a', 'b', 'c'):
-            ion_label = ion_type + str(pos)
-        elif ion_type in ('y', 'z', 'x'):
-            ion_label = ion_type + str(len(_sequence) - pos + 1)
-        else:
-            ion_label = ion  # Handle any other types as they are
-        
-        fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': ion_type})
+    pep_length = len(_sequence)
+    print(f"Peptide length: {pep_length}")
 
+    neutral_losses = {
+        '': 0, 
+        '-H2O': -18.01528, 
+        '-NH3': -17.02655
+    }
+
+    def is_in_peaks_data(mass):
+        tolerance = 0.2
+        return any(abs(mass - peak) <= tolerance for peak in peaks_data)
+
+    for pos in range(1, pep_length):
+        for ion_type in ion_types:
+       
+            if ion_type[0] in ('a', 'b', 'c'):
+                seq = ''.join(_sequence[:pos])
+            elif ion_type[0] in ('x', 'y', 'z'):
+                seq = ''.join(_sequence[-pos:])
+            
+
+            for charge in range(1, selected_charge_state + 1):
+                for loss, mass_diff in neutral_losses.items():
+                    # Calculate fragment mass with potential neutral loss
+                    _mass = mass.fast_mass2(seq, ion_type=ion_type, charge=charge, aa_mass=aa_mass) + (mass_diff / charge)  #need to account for charge state with losses
+
+                    # Determine ion label based on ion type and neutral loss
+                    ion_label = ion_type + str(pos) + loss + "+"*charge  #adds charge to ion labels
+
+                    if is_in_peaks_data(_mass):
+                            fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': ion_type})
+                            print(f"Annotated fragment: {ion_label}, m/z: {_mass}")
+
+    # precursor ion annotation
+    for charge in range(1, selected_charge_state + 1):
+        for loss, mass_diff in neutral_losses.items():
+            # Calculate fragment mass with potential neutral loss
+            seq = ''.join(_sequence)
+            _mass = mass.fast_mass2(seq, ion_type="M", charge=charge, aa_mass=aa_mass) +  (mass_diff / charge)
+
+            # Determine ion label based on ion type and neutral loss
+            ion_label = "M" + loss + "+"*charge
+
+            if is_in_peaks_data(_mass):
+                    fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': "M"})
+                    print(f"Annotated fragment: {ion_label}, m/z: {_mass}")
+        
     return fragments
 
 # Define the function to load mzML data
@@ -128,13 +156,8 @@ with Instruction_tab:
              """)
     st.image(image_hover_function, caption='The hover function in use', width=600)
 
-    
-with Spectrum_tab:
-    st.markdown("Explore the parameters influencing the spectra, over a series of scans. Select instructions for help.") 
 
-# Define the function to plot the spectrum
-
-def plot_spectrum(spectrum, show_labels):
+def plot_spectrum(spectrum, show_labels, label_ions):
     mz_values = spectrum['m/z array']
     intensity_values = spectrum['intensity array']
 
@@ -148,20 +171,33 @@ def plot_spectrum(spectrum, show_labels):
     ))
 
     TOOLTIPS = [
-                ("m/z", "@x{0.00}"),
-                ("intensity", "@y{0.0}"),
-                ("centroid", "@cent{0.00}")
+        ("m/z", "@x{0.00}"),
+        ("intensity", "@y{0.0}"),
+        ("centroid", "@cent{0.00}")
     ]
 
     p = figure(title="", x_axis_label="m/z", y_axis_label="Intensity", tooltips=None,
-            tools='pan,box_zoom,xbox_zoom, reset,save', active_drag='xbox_zoom')
-        
+               tools='pan,box_zoom,xbox_zoom,reset,save', active_drag='xbox_zoom')
+
     p.line(mz_values, intensity_values, line_width=1, color='black')
     r = p.circle('x', 'y', size=5, source=source, color='red')
 
     if show_labels:
         labels = LabelSet(x='x', y='y', text='cent', source=source, text_font_size='8pt', text_color='black')
         p.add_layout(labels)
+
+    if label_ions:
+        fragments = get_fragments(peptide_options[selected_peptide]['sequence'], 1, peak_centroids)
+
+        ions_data = {
+            'x': [frag['m/z'] for frag in fragments],
+            'y': [spectrum['intensity array'][np.argmin(np.abs(spectrum['m/z array'] - frag['m/z']))] * 1.05 for frag in fragments],
+            'ion_type': [frag['ion'] for frag in fragments]
+        }
+        ions_source = ColumnDataSource(data=ions_data)
+
+        ion_labels = LabelSet(x='x', y='y', text='ion_type', source=ions_source, text_font_size='8pt', text_color='blue', y_offset=8)
+        p.add_layout(ion_labels)
 
     p.x_range.start = min(mz_values)
     p.x_range.end = max(mz_values)
@@ -172,25 +208,26 @@ def plot_spectrum(spectrum, show_labels):
     p.add_tools(hover)
     st.bokeh_chart(p, use_container_width=True)
 
-
 st.sidebar.title("Interactive Peptide Explorer")
 st.sidebar.markdown("Select a peptide to explore its mass spectrometry data.")
 
-peptide_options = ["MRFA", "Bradykinin", "GRGDS", "SDGRG"]
-selected_peptide = st.sidebar.selectbox("Select Peptide", peptide_options)
-
+peptide_options = {
+    'MRFA': {'sequence': 'MRFA'},
+    'Bradykinin': {'sequence': 'RPPGFSPFR'},
+    'GRGDS': {'sequence': 'GRGDS'},
+    'SDGRG': {'sequence': 'SDGRG'}
+}
+selected_peptide = st.sidebar.selectbox("Select Peptide", list(peptide_options.keys()))
 show_labels = st.sidebar.checkbox("Show m/z Labels", value=False)
-
-
+label_ions = st.sidebar.checkbox("Annotate Fragments", value=False)
 
 with Spectrum_tab:
+    st.markdown("Explore the parameters influencing the spectra, over a series of scans. Select instructions for help.")
     spectra = load_mzml_data(selected_peptide)
     if spectra is not None:
         first_spectrum = next(spectra, None)  # Get the first spectrum or None if no spectra
         if first_spectrum and 'm/z array' in first_spectrum and 'intensity array' in first_spectrum:
-            plot_spectrum(first_spectrum, show_labels)
-            mz_values = first_spectrum['m/z array']
-            intensity_values = first_spectrum['intensity array']
+            plot_spectrum(first_spectrum, show_labels, label_ions)
         else:
             st.error("The mzML data for the selected peptide is not in the expected format.")
         

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fragment Visualisation</title>
+    </style>
+        body {
+            display: flex;
+            font-family: Arial, sans-serif;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-right: 1px solid #ccc;
+        }
+        .sidebar h2 {
+            margin-top: 0;
+        }
+        .main-content{
+            flex-grow: 1; 
+            padding: 15px;
+        }
+        .main-content h1 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Visualisation of Fragments</h2>
+        <p>This page visualises fragments in 2D and 3D</p>
+    </div>
+    <div class="main-content">
+        <h1>Fragment Visualisation/h1>
+        <div id="plot"></div>
+        <label for="isolation-window">Isolation Window:</label>
+        <input type="range" id="isolation-window" name="isolation-window" min="1" max="100" value="50" oninput="updatePlot(this.value)">
+    </div>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        function updatePlot(value) {
+            var data = [{
+                x: [Math.random() * value, Math.random() * value, Math.random() * value],
+                y: [Math.random() * value, Math.random() * value, Math.random() * value],
+                z: [Math.random() * value, Math.random() * value, Math.random() * value],
+                mode: 'markers',
+                type: 'scatter3d'
+            }];
+
+            var layout = {
+                title: `Peptide Fragmentation Pattern (Isolation Window: ${value})`,
+                scene: {
+                    xaxis: {title: 'm/z'},
+                    yaxis: {title: 'Intensity'},
+                    zaxis: {title: 'Retention Time'}
+                }
+            };
+
+            Plotly.newPlot('plot', data, layout);
+        }
+
+        // Initialize plot
+        updatePlot(50);
+    </script>
+</body>
+</html>
+
