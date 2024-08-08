@@ -1,3 +1,9 @@
+## FRAGMENT VISUALISATION 2D ##
+"""
+This script allows for the 2D visualisation of the fragments found in each peptide.
+
+"""
+
 import streamlit as st
 import streamlit.components.v1 as components
 import plotly.graph_objects as go
@@ -7,8 +13,8 @@ import requests
 import io
 from scipy import signal
 import pandas as pd
-import py3Dmol
 
+## FUNCTIONS ##
 
 # Peak detection function
 def peak_detection(spectrum, threshold=5, distance=4, prominence=0.8, width=2, centroid=False):
@@ -17,7 +23,12 @@ def peak_detection(spectrum, threshold=5, distance=4, prominence=0.8, width=2, c
         peaks = np.where(spectrum['intensity array'] > relative_threshold)[0]
         return peaks
     else:
-        peaks, properties = signal.find_peaks(spectrum['intensity array'], height=relative_threshold, prominence=prominence, width=width, distance=distance)
+        peaks, properties = signal.find_peaks(
+            spectrum['intensity array'], 
+            height=relative_threshold, 
+            prominence=prominence, 
+            width=width, 
+            distance=distance)
         return peaks, properties
 
 # Centroid calculation function
@@ -73,7 +84,7 @@ def get_fragments(sequence, selected_charge_state, peaks_data, isolation_window,
                         fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': ion_type})
                         print(f"Annotated fragment: {ion_label}, m/z: {_mass}")
 
-    # precursor ion annotation
+    # Precursor ion annotation
     for charge in range(1, selected_charge_state + 1):
         for loss, mass_diff in neutral_losses.items():
             seq = ''.join(_sequence)
@@ -114,7 +125,7 @@ def load_mzml_data(peptide):
 
 # Plot fragments function
 def plot_fragments(fragments):
-    # Extract m/z values, ion types, and ion labels
+    # Extract m/z values, ion types, and ion labels from the fragments
     mz_values = [fragment['m/z'] for fragment in fragments]
     ion_labels = [fragment['ion'] for fragment in fragments]
     ion_types = [fragment['type'] for fragment in fragments]
@@ -123,13 +134,15 @@ def plot_fragments(fragments):
 
     # Define colors for different ion types
     colors = {'b': 'blue', 'y': 'red', 'M': 'yellow', '': 'black'}
+    # Get unique ion types to iterate over 
     unique_ion_types = set(ion_types)
 
-    # Create a Plotly figure
+    # Create a Plotly figure for fragment visualisation
     fig = go.Figure()
 
     # Plot each fragment with different colors for different ion types
     for ion_type in unique_ion_types:
+        # Find indices of fragments that correspond to the current ion type 
         indices = [i for i, t in enumerate(ion_types) if t == ion_type]
         fig.add_trace(go.Scatter(
             x=[mz_values[i] for i in indices],
@@ -139,7 +152,7 @@ def plot_fragments(fragments):
             name=f'Ion Type {ion_type}'
         ))
 
-    # Update layout
+    # Update layout of plot 
     fig.update_layout(
         title='Annotated Fragments',
         xaxis_title='m/z',
@@ -150,7 +163,7 @@ def plot_fragments(fragments):
     # Display the figure in Streamlit
     st.plotly_chart(fig)
 
-
+# Function to display the Streamlit app interface 
 def show():
     peptide_options = {
         'MRFA': 'MRFA',
@@ -160,16 +173,21 @@ def show():
     }
 
     selected_peptide_name = st.sidebar.selectbox(
-        "Select a peptide sequence", list(peptide_options.keys())
+        "Select a peptide sequence", 
+        list(peptide_options.keys())
     )
 
     peptide_sequence = peptide_options[selected_peptide_name]
     st.write(f"Selected Peptide Sequence: {peptide_sequence}")
 
-    # User-selectable charge state
-    selected_charge_state = st.slider("Select Charge State", min_value=1, max_value=3, value=1)
+    # User-selectable slider for charge state
+    selected_charge_state = st.slider(
+        "Select Charge State", 
+        min_value=1, 
+        max_value=3, 
+        value=1)
 
-    # User-selectable isolation window
+    # User-selectable slider for isolation window
     isolation_window = st.slider(
         "Select Isolation Window (m/z)", 
         min_value=0.0, 
@@ -193,12 +211,10 @@ def show():
         fragments = get_fragments(peptide_sequence, selected_charge_state, peaks_data, isolation_window)
         plot_fragments(fragments)
         
+        # Converts fragments data to a DataFrame for display 
         df_fragments = pd.DataFrame(fragments)
+        # Display the fragment in a table, with columns as specified 
         st.table(df_fragments[['type', 'm/z', 'ion']])
-    
-       
-        
-
 
        
 if __name__ == "__main__":

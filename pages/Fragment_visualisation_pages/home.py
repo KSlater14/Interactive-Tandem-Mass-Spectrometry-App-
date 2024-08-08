@@ -1,5 +1,11 @@
+## FRAGMENT VISUALISATION HOME ##
+"""
+This script displays necessary information and instructions to help user utilise the fragment visualisation 
+menu and features. 
+"""
 import streamlit as st 
 
+# Displays introductory text and instructions for the fragment visualisation features within the app
 def show(): 
     st.title("Fragment Visualisation")
     st.write("""

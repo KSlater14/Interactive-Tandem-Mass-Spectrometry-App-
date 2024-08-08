@@ -1,3 +1,9 @@
+## PEPTIDE EXPLORER ##
+"""
+This script is used to explore the full MS scan of each peptide within the data provided. 
+It imports the required libraries, defines the functions for peak detection, centroid calculation and
+retrieves fragments. 
+"""
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -8,6 +14,8 @@ import requests
 import io
 from scipy import signal
 
+## FUNCTIONS ##
+
 # Define the peak detection function
 def peak_detection(spectrum, threshold=5, distance=4, prominence=0.8, width=2, centroid=False):
     relative_threshold = spectrum['intensity array'].max() * (threshold / 100)
@@ -15,7 +23,11 @@ def peak_detection(spectrum, threshold=5, distance=4, prominence=0.8, width=2, c
         peaks = np.where(spectrum['intensity array'] > relative_threshold)[0]
         return peaks, None
     else:
-        peaks, properties = signal.find_peaks(spectrum['intensity array'], height=relative_threshold, prominence=prominence, width=width, distance=distance)
+        peaks, properties = signal.find_peaks(
+            spectrum['intensity array'], 
+            height=relative_threshold, 
+            prominence=prominence, width=width, 
+            distance=distance)
         return peaks, properties
 
 # Define the function to get centroid values
@@ -68,8 +80,8 @@ def get_fragments(sequence, selected_charge_state, peaks_data, ion_types=('b', '
 
             for charge in range(1, selected_charge_state + 1):
                 for loss, mass_diff in neutral_losses.items():
-                    # Calculate fragment mass with potential neutral loss
-                    _mass = mass.fast_mass2(seq, ion_type=ion_type, charge=charge, aa_mass=aa_mass) + (mass_diff / charge)  #need to account for charge state with losses
+                    # Calculate fragment mass with potential neutral loss, need to account for charge state with losses 
+                    _mass = mass.fast_mass2(seq, ion_type=ion_type, charge=charge, aa_mass=aa_mass) + (mass_diff / charge) 
 
                     # Determine ion label based on ion type and neutral loss
                     ion_label = ion_type + str(pos) + loss + "+"*charge  #adds charge to ion labels
@@ -78,7 +90,7 @@ def get_fragments(sequence, selected_charge_state, peaks_data, ion_types=('b', '
                             fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': ion_type})
                             print(f"Annotated fragment: {ion_label}, m/z: {_mass}")
 
-    # precursor ion annotation
+    # Precursor ion annotation
     for charge in range(1, selected_charge_state + 1):
         for loss, mass_diff in neutral_losses.items():
             # Calculate fragment mass with potential neutral loss
@@ -94,7 +106,7 @@ def get_fragments(sequence, selected_charge_state, peaks_data, ion_types=('b', '
         
     return fragments
 
-# Define the function to load mzML data
+# Defines the function to load mzML data
 def load_mzml_data(peptide):
     file_map = {
         'MRFA': 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data/MRFA/12Mar2024_MJ_MRFA_full_scan_enhanced.mzML',
@@ -112,10 +124,10 @@ def load_mzml_data(peptide):
         st.error("No mzML data available for the selected peptide.")
         return None
     
-# Streamlit layout
+# Streamlit layout, creation of tabs 
 Spectrum_tab, Instruction_tab = st.tabs(["Spectrum", "Instructions"])
 
-
+# Instruction tab content
 with Instruction_tab:  
 
     image_peptide_selection = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/peptide%20selection.png'
@@ -145,18 +157,20 @@ with Instruction_tab:
              which can be selected via the checkbox. 
              A checkbox can be selected to annotate the fragments with the ions within the spectrum. 
     - The plot has various interactive features that allows the user to undertake a thorough exploration. These features include:
-   
+
     - The expansion of the plot to a full screen.""")
     st.image(image_plot_expansion, caption='Button for spectrum plot expansion', width=800)
+    
     ("""
         - The ability to drag the cursor of a section of the plot to zoom in for exploration.""")
     st.image(image_zoom_function, caption='The cursor drag zoom function', width=600)
+    
     ("""
         - A hover tool allows the cursor, when hovering over a peak, to display the m/z, intensity and centroid data regarding each peak.
              """)
     st.image(image_hover_function, caption='The hover function in use', width=600)
 
-
+# Plot spectrum function 
 def plot_spectrum(spectrum, show_labels, label_ions):
     mz_values = spectrum['m/z array']
     intensity_values = spectrum['intensity array']
@@ -183,7 +197,12 @@ def plot_spectrum(spectrum, show_labels, label_ions):
     r = p.circle('x', 'y', size=5, source=source, color='red')
 
     if show_labels:
-        labels = LabelSet(x='x', y='y', text='cent', source=source, text_font_size='8pt', text_color='black')
+        labels = LabelSet(x='x', 
+                          y='y', 
+                          text='cent', 
+                          source=source, 
+                          text_font_size='8pt', 
+                          text_color='black')
         p.add_layout(labels)
 
     if label_ions:
@@ -196,36 +215,55 @@ def plot_spectrum(spectrum, show_labels, label_ions):
         }
         ions_source = ColumnDataSource(data=ions_data)
 
-        ion_labels = LabelSet(x='x', y='y', text='ion_type', source=ions_source, text_font_size='8pt', text_color='blue', y_offset=8)
+        ion_labels = LabelSet(x='x', 
+                              y='y', 
+                              text='ion_type', 
+                              source=ions_source, 
+                              text_font_size='8pt', 
+                              text_color='blue', 
+                              y_offset=8)
         p.add_layout(ion_labels)
 
+    # Defines range for x and y axes of the plot 
+    # Sets x-axis range from the minimum to the maximum m/z values 
     p.x_range.start = min(mz_values)
     p.x_range.end = max(mz_values)
+    # Setting the y-axis range from 0 to 10% above the maximum intensity value 
     p.y_range.start = 0
     p.y_range.end = max(intensity_values) * 1.1
 
     hover = HoverTool(tooltips=TOOLTIPS, renderers=[r])
     p.add_tools(hover)
+    # Displays the plot in the Streamlit app with width that adapts to the container 
     st.bokeh_chart(p, use_container_width=True)
 
+## PAGE LAYOUT ## 
+
+# Sidebar configuration for the Streamlit app
 st.sidebar.title("Interactive Peptide Explorer")
 st.sidebar.markdown("Select a peptide to explore its mass spectrometry data.")
 
+# Options for different peptides with associated sequence 
 peptide_options = {
     'MRFA': {'sequence': 'MRFA'},
     'Bradykinin': {'sequence': 'RPPGFSPFR'},
     'GRGDS': {'sequence': 'GRGDS'},
     'SDGRG': {'sequence': 'SDGRG'}
 }
-selected_peptide = st.sidebar.selectbox("Select Peptide", list(peptide_options.keys()))
+
+selected_peptide = st.sidebar.selectbox("Select Peptide", 
+                                        list(peptide_options.keys()))
 show_labels = st.sidebar.checkbox("Show m/z Labels", value=False)
 label_ions = st.sidebar.checkbox("Annotate Fragments", value=False)
 
+# Main content for Spectrum tab 
 with Spectrum_tab:
     st.markdown("Explore the parameters influencing the spectra, over a series of scans. Select instructions for help.")
     spectra = load_mzml_data(selected_peptide)
     if spectra is not None:
-        first_spectrum = next(spectra, None)  # Get the first spectrum or None if no spectra
+        # Get the first spectrum from the loaded data or None if no spectra 
+        first_spectrum = next(spectra, None)  
+        # Checks whether spectrum contains necessary data arrays 
         if first_spectrum and 'm/z array' in first_spectrum and 'intensity array' in first_spectrum:
             plot_spectrum(first_spectrum, show_labels, label_ions)
         else:
