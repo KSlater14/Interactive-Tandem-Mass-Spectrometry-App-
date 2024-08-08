@@ -1,8 +1,5 @@
 import streamlit as st
 
-
-
-
 # Function to generate the HTML for JSmol viewer
 def generate_jsmol_html(pdb_id):
     return f"""
@@ -10,40 +7,28 @@ def generate_jsmol_html(pdb_id):
     <script type="text/javascript">
         Jmol.getApplet("jsmolApplet0", {{
             width: 500,
-            height: 700,
+            height: 500,
             use: "HTML5",
             j2sPath: "https://chemapps.stolaf.edu/jmol/jsmol/j2s",
-            script: "load https://files.rcsb.org/view/{pdb_id}.pdb; cartoons only; color structure;"
+            script: "load=//files.rcsb.org/view/{pdb_id}.pdb;cartoons only;color structure"
         }});
     </script>
     <div id="jsmolApplet0" style="margin:auto;"></div>
     """
 
 # Streamlit app to visualize a protein structure in 3D using JSmol
-def show():
+def show_3d_structure():
     st.title("3D Protein Structure Visualization")
-    st.markdown("Explore the 3D protein structure of the available peptides. With structures directly taken from RCSB Protein Data Bank")
 
-    peptide_options = {"MRFA", "Bradykinin", "GRGDS", "Substance P"}
-    selected_peptide = st.sidebar.selectbox("Select Peptide", peptide_options)
-                                        
-    peptide_pdb = {
-        "MRFA": '6ZNS',
-        "Bradykinin": '6F3V', 
-        "GRGDS": '1LZ6',
-        "Substance P": '2KS9'
-    }
     # PDB ID for 6ZNS is hardcoded here
-    pdb_id = peptide_pdb[selected_peptide]
+    pdb_id = "6ZNS"
 
     # Generate the JSmol HTML
     jsmol_html = generate_jsmol_html(pdb_id)
 
     # Display the HTML with JSmol embedded
-    st.components.v1.html(jsmol_html, height=650, width=550)
+    st.components.v1.html(jsmol_html, height=550, width=550)
 
 # Example of how to use this in your Streamlit navigation
 if __name__ == "__main__":
-    show()
-
-
+    show_3d_structure()
