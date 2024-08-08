@@ -1,3 +1,10 @@
+#Interactive Parameter Explorer
+"""
+This script is used for the visualisation of mass spectrometry parameters. 
+It imports the required libraries, defines functions for peak detection, centroid calculation, 
+averages spectra, interpolates collision induced dissociation energy, retreives fragments and includes 
+functionalities to load and process mzML data. 
+"""
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -12,8 +19,10 @@ from scipy.interpolate import interp1d
 ## FUNCTIONS ##
 
 def peak_detection(spectrum, threshold=5, distance=4, prominence=0.8, width=2, centroid=False):
+    #Calculates the relative intensity threshold for peak detection
     relative_threshold = spectrum['intensity array'].max() * (threshold / 100)
     if centroid:
+        #For centroid mode: Return indices where intensity exceeds the relative threshold
         peaks = np.where(spectrum['intensity array'] > relative_threshold)[0]
         return peaks
     else:

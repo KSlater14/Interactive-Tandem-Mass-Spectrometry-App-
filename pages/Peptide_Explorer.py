@@ -187,7 +187,7 @@ def plot_spectrum(spectrum, show_labels, label_ions):
         p.add_layout(labels)
 
     if label_ions:
-        fragments = get_fragments(peptide_options[selected_peptide]['sequence'], 1, peak_centroids)
+        fragments = get_fragments(peptide_options[selected_peptide]['sequence'], 3, peak_centroids)
 
         ions_data = {
             'x': [frag['m/z'] for frag in fragments],

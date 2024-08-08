@@ -9,11 +9,6 @@ from scipy import signal
 import pandas as pd
 import py3Dmol
 
-aa_mass = mass.std_aa_mass
-aa_mass['p'] = 79.966331  # phosphorylation (STY)
-aa_mass['ox'] = 15.994915  # oxidation (MW)
-aa_mass['d'] = 0.984016  # deamidation (NQ)
-aa_mass['am'] = -0.984016  # amidation (C-term)
 
 # Peak detection function
 def peak_detection(spectrum, threshold=5, distance=4, prominence=0.8, width=2, centroid=False):
@@ -36,6 +31,12 @@ def return_centroid(spectrum, peaks, properties):
         intensity_range = spectrum['intensity array'][peak_range]
         centroids[i] = np.sum(mz_range * intensity_range) / np.sum(intensity_range)
     return centroids
+
+aa_mass = mass.std_aa_mass
+aa_mass['p'] = 79.966331  # phosphorylation (STY)
+aa_mass['ox'] = 15.994915  # oxidation (MW)
+aa_mass['d'] = 0.984016  # deamidation (NQ)
+aa_mass['am'] = -0.984016  # amidation (C-term)
 
 # Fragment annotation function with isolation window
 def get_fragments(sequence, selected_charge_state, peaks_data, isolation_window, ion_types=('b', 'y')):
