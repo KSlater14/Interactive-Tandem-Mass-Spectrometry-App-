@@ -1,0 +1,74 @@
+import numpy as np 
+import matplotlib.pyplot as plt 
+from pyteomics import mzml 
+import streamlit as st
+
+
+MRFA_file = "/12Mar2024_MJ_ultramark1621.mzML"
+
+def plot_spectrum(MRFA_file, spectrum_index):
+    reader = mzml.read(MRFA_file, use_index=True)
+    spec = reader[spectrum_index]
+
+    fig, ax = plt.subplots()
+
+    ax.plot(spec["m/z array"], spec["intensity array"])
+    ax.set_title('Full MRFA MS1 Scan')
+    ax.set_xlabel('m/z')
+    ax.set_ylabel('Intensity')
+    ax.set_xlim(1215, 1230)
+
+    return fig 
+
+def tophat(centre, width, xs):
+    ys = np.zeros_like(xs)
+    lowerl = centre - (width / 2)
+    upperl = centre - (width / 2)
+    ys[(xs > lowerl) & (xs < upperl)] = 1 
+
+    return ys
+
+
+
+# Streamlit layout, creation of tabs 
+Isolation_tab, Instruction_tab = st.tabs(["Isolation Window", "Instructions"])
+
+with Instruction_tab:
+    st.header("Instructions")
+    st.markdown("Instructions for the use of the Isolation Window")
+    st.subheader("Isolation Window")
+    st.write("""
+
+""")
+    
+st.sidebar.title("Isolation Window")
+st.sidebar.markdown("Explore the impact of the isolation window.... ")
+
+isolation_centre = st.slider("Select the Centrepoint value (m/z) of the isolation window",
+                             min_value=1,
+                             max_value=1000,
+                             value=1)
+
+isolation_width = st.slider("Select the width of the isolation window",
+                            min_value=1,
+                            max_value=100,
+                            value=1)
+
+
+
+spectrum_index = st(
+        "Select spectrum index",
+        min_value=0,
+        max_value=100,
+        value=20
+    )
+
+mzs = np.arrange(100, 1000, 0.5)
+
+
+
+fig = plot_spectrum(MRFA_file, spectrum_index)
+st.pyplot(fig)
+
+
+

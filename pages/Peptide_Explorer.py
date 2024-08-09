@@ -124,52 +124,6 @@ def load_mzml_data(peptide):
         st.error("No mzML data available for the selected peptide.")
         return None
     
-# Streamlit layout, creation of tabs 
-Spectrum_tab, Instruction_tab = st.tabs(["Spectrum", "Instructions"])
-
-# Instruction tab content
-with Instruction_tab:  
-
-    image_peptide_selection = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/peptide%20selection.png'
-    image_full_peptide_plot = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/plotting%20of%20peptide.png'
-    image_plot_expansion = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/View%20fullscreen.png'
-    image_zoom_function =  'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/Zoom%20function.png'
-    image_hover_function = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/Hover%20function.png'
-
-    st.header("Instructions")
-    st.markdown("Instructions for the use of the Peptide Explorer")
-    st.subheader("Peptide Selection")
-    st.write("""
-- Within this interactive peptide explorer, the entire spectra for a single peptide can be explored. 
-- The user can select which peptide they would like to investigate. 
-- Once selected the spectra is automatically plotted.
-             """)
-
-    col1, col2 = st.columns(2)
-    with col1: 
-        st.image(image_peptide_selection, caption='Data Selection: Using data already available', width=300)
-    with col2:
-        st.image(image_full_peptide_plot, caption='Automatic plotting of the full spectrum specific to each peptide', width=900)    
-
-    st.subheader("Plot interactivity")
-    st.write("""
-    - Once plotted, the only settings that can be changed is whether the user wants to 'Show m/z Labels', 
-             which can be selected via the checkbox. 
-             A checkbox can be selected to annotate the fragments with the ions within the spectrum. 
-    - The plot has various interactive features that allows the user to undertake a thorough exploration. These features include:
-
-    - The expansion of the plot to a full screen.""")
-    st.image(image_plot_expansion, caption='Button for spectrum plot expansion', width=800)
-    
-    ("""
-        - The ability to drag the cursor of a section of the plot to zoom in for exploration.""")
-    st.image(image_zoom_function, caption='The cursor drag zoom function', width=600)
-    
-    ("""
-        - A hover tool allows the cursor, when hovering over a peak, to display the m/z, intensity and centroid data regarding each peak.
-             """)
-    st.image(image_hover_function, caption='The hover function in use', width=600)
-
 # Plot spectrum function 
 def plot_spectrum(spectrum, show_labels, label_ions):
     mz_values = spectrum['m/z array']
@@ -236,6 +190,53 @@ def plot_spectrum(spectrum, show_labels, label_ions):
     p.add_tools(hover)
     # Displays the plot in the Streamlit app with width that adapts to the container 
     st.bokeh_chart(p, use_container_width=True)
+
+# Streamlit layout, creation of tabs 
+Spectrum_tab, Instruction_tab = st.tabs(["Spectrum", "Instructions"])
+
+# Instruction tab content
+with Instruction_tab:  
+
+    image_peptide_selection = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/peptide%20selection.png'
+    image_full_peptide_plot = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/plotting%20of%20peptide.png'
+    image_plot_expansion = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/View%20fullscreen.png'
+    image_zoom_function =  'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/Zoom%20function.png'
+    image_hover_function = 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Instruction%20images/Hover%20function.png'
+
+    st.header("Instructions")
+    st.markdown("Instructions for the use of the Peptide Explorer")
+    st.subheader("Peptide Selection")
+    st.write("""
+- Within this interactive peptide explorer, the entire spectra for a single peptide can be explored. 
+- The user can select which peptide they would like to investigate. 
+- Once selected the spectra is automatically plotted.
+             """)
+
+    col1, col2 = st.columns(2)
+    with col1: 
+        st.image(image_peptide_selection, caption='Data Selection: Using data already available', width=300)
+    with col2:
+        st.image(image_full_peptide_plot, caption='Automatic plotting of the full spectrum specific to each peptide', width=900)    
+
+    st.subheader("Plot interactivity")
+    st.write("""
+    - Once plotted, the only settings that can be changed is whether the user wants to 'Show m/z Labels', 
+             which can be selected via the checkbox. 
+             A checkbox can be selected to annotate the fragments with the ions within the spectrum. 
+    - The plot has various interactive features that allows the user to undertake a thorough exploration. These features include:
+
+    - The expansion of the plot to a full screen.""")
+    st.image(image_plot_expansion, caption='Button for spectrum plot expansion', width=800)
+    
+    ("""
+        - The ability to drag the cursor of a section of the plot to zoom in for exploration.""")
+    st.image(image_zoom_function, caption='The cursor drag zoom function', width=600)
+    
+    ("""
+        - A hover tool allows the cursor, when hovering over a peak, to display the m/z, intensity and centroid data regarding each peak.
+             """)
+    st.image(image_hover_function, caption='The hover function in use', width=600)
+
 
 ## PAGE LAYOUT ## 
 
