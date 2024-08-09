@@ -5,14 +5,14 @@ This script allows for the 2D visualisation of the fragments found in each pepti
 """
 import streamlit as st
 import streamlit.components.v1 as components
-from bokeh.models import ColumnDataSource, HoverTool, Legend
+from bokeh.models import ColumnDataSource, HoverTool, Legend, LegendItem
 from bokeh.plotting import figure
 from bokeh.palettes import Category10
-from bokeh.io import show
 import numpy as np
 from pyteomics import mzml, parser, mass
 import requests
 import io
+import math
 from scipy import signal
 import pandas as pd
 
@@ -83,8 +83,9 @@ def get_fragments(sequence, selected_charge_state, peaks_data, isolation_window,
                     ion_label = ion_type + str(pos) + loss + "+"*charge
 
                     if is_in_peaks_data(_mass):
-                        fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': ion_type})
+                        fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': ion_type, 'start': _mass - 0.5, 'end': _mass + 0.5})
                         print(f"Annotated fragment: {ion_label}, m/z: {_mass}")
+
 
     # Precursor ion annotation
     for charge in range(1, selected_charge_state + 1):
@@ -94,7 +95,7 @@ def get_fragments(sequence, selected_charge_state, peaks_data, isolation_window,
             ion_label = "M" + loss + "+"*charge
 
             if is_in_peaks_data(_mass):
-                fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': "M"})
+                fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': "M", 'start': _mass - 0.5, 'end': _mass + 0.5})
                 print(f"Annotated fragment: {ion_label}, m/z: {_mass}")
     
     return fragments
@@ -125,8 +126,10 @@ def load_mzml_data(peptide):
         print("No mzML data available for the selected peptide.")
         return None
 
+
+
 # Plot fragments function
-def plot_fragments(fragments, peptide_sequence):
+def plot_fragments(fragments):
     if not fragments:
         st.write("No fragments found to plot.")
         return
@@ -135,22 +138,27 @@ def plot_fragments(fragments, peptide_sequence):
     mz_values = [fragment['m/z'] for fragment in fragments]
     ion_labels = [fragment['ion'] for fragment in fragments]
     ion_types = [fragment['type'] for fragment in fragments]
+    
+    ion_start = [fragment.get('start', fragment['m/z'] - 0.5) for fragment in fragments]
+    ion_end = [fragment.get('end', fragment['m/z'] + 0.5) for fragment in fragments]
 
     # Define colors for different ion types
-    colors = {'b': 'blue', 'y': 'red', 'M': 'yellow', '': 'black'}
+    colors = {'b': 'blue', 'y': 'red', 'M': 'orange', '': 'black'}
     color_values = [colors.get(ion_type, 'black') for ion_type in ion_types]
 
     # Create a ColumnDataSource from the fragment data
     fragment_data = ColumnDataSource(data=dict(
         mz_values=mz_values,
         ion_labels=ion_labels,
+        ion_start=ion_start,
+        ion_end=ion_end,
         ion_types=ion_types,
         color_values=color_values  # Add color values to the data source
     ))
     
     # Create a Bokeh figure for the plot
-    plot_spectrum = figure(
-        title="Fragment Ion Spectrum",
+    p = figure(
+        title="Fragment Ion Visualisation",
         x_axis_label='m/z',
         y_axis_label='Ion',
         y_range=fragment_data.data['ion_labels'],
@@ -158,41 +166,56 @@ def plot_fragments(fragments, peptide_sequence):
         active_drag='xbox_zoom'
     )
 
-    # Plot fragments using scatter plot
-    plot_spectrum.scatter(
-        x='mz_values',
+    p.hbar( 
         y='ion_labels',
-        color='color_values',  # Reference the color values from the data source
-        size=8,
-        source=fragment_data,
-        legend_field='ion_types'
+        left='ion_start',
+        right='ion_end',
+        height=0.7,
+        color='color_values',
+        source=fragment_data
     )
-    
+
+    if mz_values:
+        max_mz = math.ceil(max(mz_values))  # Round up to nearest integer
+        x_ticks = list(range(0, max_mz + 1, 10))  # Create ticks at every 10 units
+        p.xaxis.ticker = x_ticks
+        p.xaxis.major_label_overrides = {tick: str(tick) for tick in x_ticks}
+    else:
+        p.xaxis.ticker = [0]
+
     # Add HoverTool for displaying tooltips
     hover = HoverTool(tooltips=[
         ("m/z", "@mz_values"),
         ("Ion", "@ion_labels"),
         ("Type", "@ion_types")
     ])
-    plot_spectrum.add_tools(hover)
+    p.add_tools(hover)
 
-    # Configure legend
-    plot_spectrum.legend.title = 'Ion Type'
-    plot_spectrum.legend.location = 'top_left'
-    plot_spectrum.legend.click_policy = 'hide'
+    legend_items = []
+    unique_ion_types = set(ion_types)  # Get unique ion types to avoid duplicate legend items
+    for ion_type in unique_ion_types:
+        color = colors.get(ion_type, 'black')
+        
+        # Create a dummy plot for the legend item
+        legend_source = ColumnDataSource(data=dict(x=[0], y=[0]))
+        
+        # Create a glyph for the legend item
+        legend_glyph = p.scatter(
+            x='x',
+            y='y',
+            color=color,
+            size=8,
+            source=legend_source,
+            legend_label=ion_type
+        )
+        
+        legend_items.append(LegendItem(label=f"{ion_type}", renderers=[legend_glyph]))
 
-    
-    # Add peptide sequence as text annotation
-    plot_spectrum.text(
-        x=[max(mz_values) * 0.5],
-        y=[max(ion_labels)],
-        text=[f"Peptide Sequence: {peptide_sequence}"],
-        text_font_size="12pt",
-        text_align="center",
-        text_baseline="top"
-    )
-    
-    st.bokeh_chart(plot_spectrum, use_container_width=True)
+    # Configure the appearance of the legend
+    p.legend.title = 'Ion Type'
+    p.legend.location = 'right'
+ 
+    st.bokeh_chart(p, use_container_width=True)
 
 # Function to display the Streamlit app interface 
 def show():
@@ -219,14 +242,8 @@ def show():
         value=1)
 
     # User-selectable slider for isolation window
-    isolation_window = st.slider(
-        "Select Isolation Window (m/z)", 
-        min_value=0.0, 
-        max_value=2000.0, 
-        value=(0.0, 2000.0)
-    )
-    st.write(f"Isolation Window: {isolation_window}")
-
+    isolation_window = (0.0, 2000.0)
+    
     # Load mzML data
     mzml_data = load_mzml_data(selected_peptide_name)
     if mzml_data is not None:
@@ -240,7 +257,7 @@ def show():
 
         # Annotate fragments based on peaks data and isolation window
         fragments = get_fragments(peptide_sequence, selected_charge_state, peaks_data, isolation_window)
-        plot_fragments(fragments, peptide_sequence)
+        plot_fragments(fragments)
         
         # Converts fragments data to a DataFrame for display 
         df_fragments = pd.DataFrame(fragments)
