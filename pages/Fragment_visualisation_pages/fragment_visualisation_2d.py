@@ -153,6 +153,7 @@ def plot_fragments(fragments, peptide_sequence):
         title="Fragment Ion Spectrum",
         x_axis_label='m/z',
         y_axis_label='Ion',
+        y_range=fragment_data.data['ion_labels'],
         tools='pan,box_zoom,xbox_zoom,reset,save',
         active_drag='xbox_zoom'
     )
