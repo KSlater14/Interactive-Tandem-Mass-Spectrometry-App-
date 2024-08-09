@@ -76,6 +76,7 @@ def plot_spectrum(MRFA_file, isolation_centre, isolation_width):
     p.line('mzs', 'intensities', source=source_original, legend_label='Original Intensity', color=Spectral11[0], alpha=0.3, line_width=2)
     p.line('mzs', 'filtered_intensities', source=source_filtered, legend_label='Filtered Intensity', color=Spectral11[1], line_dash='dashed', line_width=2)
 
+
     p.legend.location = "top_left"
     p.legend.background_fill_color = 'white'
 
