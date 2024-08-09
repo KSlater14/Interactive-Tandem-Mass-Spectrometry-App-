@@ -22,16 +22,16 @@ def generate_jsmol_html(pdb_id):
 # Streamlit app to visualize a protein structure in 3D using JSmol
 def show():
     st.title("3D Protein Structure Visualization")
-    st.markdown("Explore the 3D protein structure of the available peptides. With structures directly taken from RCSB Protein Data Bank")
+    st.markdown("Explore the 3D protein structure of Bradykinin as a peptide and the full protein structure of Ubiquitin.") 
+    st.write("With structures directly taken from RCSB Protein Data Bank to provide a visual image of both a peptide structure and a protein structure.")
 
-    peptide_options = {"MRFA", "Bradykinin", "GRGDS", "Substance P"}
+    peptide_options = {"Ubiquitin", "Bradykinin"}
     selected_peptide = st.sidebar.selectbox("Select Peptide", peptide_options)
                                         
     peptide_pdb = {
-        "MRFA": '6ZNS',
+        "Ubiquitin": '1UBQ',
         "Bradykinin": '6F3V', 
-        "GRGDS": '1LZ6',
-        "Substance P": '2KS9'
+        
     }
     # PDB ID for 6ZNS is hardcoded here
     pdb_id = peptide_pdb[selected_peptide]

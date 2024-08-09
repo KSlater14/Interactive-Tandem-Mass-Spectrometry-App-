@@ -3,12 +3,10 @@
 This script allows for the 2D visualisation of the fragments found in each peptide.
 
 """
+
 import streamlit as st
 import streamlit.components.v1 as components
-from bokeh.models import ColumnDataSource, HoverTool, Legend
-from bokeh.plotting import figure
-from bokeh.palettes import Category10
-from bokeh.io import show
+import plotly.graph_objects as go
 import numpy as np
 from pyteomics import mzml, parser, mass
 import requests
@@ -126,72 +124,44 @@ def load_mzml_data(peptide):
         return None
 
 # Plot fragments function
-def plot_fragments(fragments, peptide_sequence):
-    if not fragments:
-        st.write("No fragments found to plot.")
-        return
-    
+def plot_fragments(fragments):
     # Extract m/z values, ion types, and ion labels from the fragments
     mz_values = [fragment['m/z'] for fragment in fragments]
     ion_labels = [fragment['ion'] for fragment in fragments]
     ion_types = [fragment['type'] for fragment in fragments]
+   
+ 
 
     # Define colors for different ion types
     colors = {'b': 'blue', 'y': 'red', 'M': 'yellow', '': 'black'}
-    color_values = [colors.get(ion_type, 'black') for ion_type in ion_types]
+    # Get unique ion types to iterate over 
+    unique_ion_types = set(ion_types)
 
-    # Create a ColumnDataSource from the fragment data
-    fragment_data = ColumnDataSource(data=dict(
-        mz_values=mz_values,
-        ion_labels=ion_labels,
-        ion_types=ion_types,
-        color_values=color_values  # Add color values to the data source
-    ))
-    
-    # Create a Bokeh figure for the plot
-    plot_spectrum = figure(
-        title="Fragment Ion Spectrum",
-        x_axis_label='m/z',
-        y_axis_label='Ion',
-        tools='pan,box_zoom,xbox_zoom,reset,save',
-        active_drag='xbox_zoom'
+    # Create a Plotly figure for fragment visualisation
+    fig = go.Figure()
+
+    # Plot each fragment with different colors for different ion types
+    for ion_type in unique_ion_types:
+        # Find indices of fragments that correspond to the current ion type 
+        indices = [i for i, t in enumerate(ion_types) if t == ion_type]
+        fig.add_trace(go.Scatter(
+            x=[mz_values[i] for i in indices],
+            y=[ion_labels[i] for i in indices],
+            mode='markers',
+            marker=dict(color=colors.get(ion_type, 'black')),
+            name=f'Ion Type {ion_type}'
+        ))
+
+    # Update layout of plot 
+    fig.update_layout(
+        title='Annotated Fragments',
+        xaxis_title='m/z',
+        yaxis_title='Ion',
+        legend_title='Ion Type'
     )
 
-    # Plot fragments using scatter plot
-    plot_spectrum.scatter(
-        x='mz_values',
-        y='ion_labels',
-        color='color_values',  # Reference the color values from the data source
-        size=8,
-        source=fragment_data,
-        legend_field='ion_types'
-    )
-    
-    # Add HoverTool for displaying tooltips
-    hover = HoverTool(tooltips=[
-        ("m/z", "@mz_values"),
-        ("Ion", "@ion_labels"),
-        ("Type", "@ion_types")
-    ])
-    plot_spectrum.add_tools(hover)
-
-    # Configure legend
-    plot_spectrum.legend.title = 'Ion Type'
-    plot_spectrum.legend.location = 'top_left'
-    plot_spectrum.legend.click_policy = 'hide'
-
-    
-    # Add peptide sequence as text annotation
-    plot_spectrum.text(
-        x=[max(mz_values) * 0.5],
-        y=[max(ion_labels)],
-        text=[f"Peptide Sequence: {peptide_sequence}"],
-        text_font_size="12pt",
-        text_align="center",
-        text_baseline="top"
-    )
-    
-    st.bokeh_chart(plot_spectrum, use_container_width=True)
+    # Display the figure in Streamlit
+    st.plotly_chart(fig)
 
 # Function to display the Streamlit app interface 
 def show():
@@ -239,7 +209,7 @@ def show():
 
         # Annotate fragments based on peaks data and isolation window
         fragments = get_fragments(peptide_sequence, selected_charge_state, peaks_data, isolation_window)
-        plot_fragments(fragments, peptide_sequence)
+        plot_fragments(fragments)
         
         # Converts fragments data to a DataFrame for display 
         df_fragments = pd.DataFrame(fragments)
