@@ -7,14 +7,13 @@ functionalities to load and process mzML data.
 """
 import streamlit as st
 import numpy as np
-import pandas as pd
 from scipy import signal
 from bokeh.models import ColumnDataSource, LabelSet, HoverTool, Range1d
 from bokeh.plotting import figure
 from pyteomics import mzml, mass, parser
 import requests
 import io
-from scipy.interpolate import interp1d
+
 
 ## FUNCTIONS ##
 

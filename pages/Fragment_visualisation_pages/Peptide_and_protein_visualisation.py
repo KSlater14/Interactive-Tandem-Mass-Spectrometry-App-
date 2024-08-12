@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components 
 
 # Function to generate the HTML for JSmol viewer
 def generate_jsmol_html(pdb_id):

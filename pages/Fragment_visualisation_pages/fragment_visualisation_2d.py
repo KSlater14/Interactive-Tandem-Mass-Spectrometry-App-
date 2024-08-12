@@ -4,7 +4,6 @@ This script allows for the 2D visualisation of the fragments found in each pepti
 
 """
 import streamlit as st
-import streamlit.components.v1 as components
 from bokeh.models import ColumnDataSource, HoverTool, LegendItem
 from bokeh.plotting import figure
 from bokeh.palettes import Category10
