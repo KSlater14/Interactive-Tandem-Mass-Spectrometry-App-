@@ -1,16 +1,11 @@
-streamlit
-streamlit.components.v1
-numpy
-pandas
-scipy 
-scipy.interpolate
-bokeh.models 
-bokeh.plotting
-pynumpress
-pyteomics
-requests 
-io 
-plotly.graph_objects
-py3Dmol
-
-pydeck
+- Python 3.x 
+- Streamlit 
+- Bokeh
+- NumPy
+- Pandas
+- SciPy
+- Pynumpress
+- Pyteomics
+- Requests
+- io 
+- os 

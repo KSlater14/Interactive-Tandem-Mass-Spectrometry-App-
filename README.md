@@ -125,7 +125,7 @@ git push origin feature-branch
 6. Create a Pull Request. 
 
 ## License
-This project is licensed under the MIT License- see the LICENSE file for details. 
+This project is licensed under the MIT License- see the [LICENSE](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/__init__.py) file for details. 
 
 ## Acknowledgments 
 Jedd Bellamy-Carter for his contribution to the app. 
