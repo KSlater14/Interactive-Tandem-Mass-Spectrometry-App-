@@ -22,4 +22,5 @@ def show():
                 3. Interact with the plots to explore the fragments, peptides and final protein structure.
                 4. Use the available controls to customise visualisation. 
                 
+              For the best view of each plot, expand to full screen. 
                 """)

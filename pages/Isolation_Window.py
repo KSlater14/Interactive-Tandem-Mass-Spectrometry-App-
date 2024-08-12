@@ -98,8 +98,10 @@ Isolation_tab, Instruction_tab = st.tabs(["Isolation Window", "Instructions"])
 
 with Instruction_tab:
     st.header("Instructions")
-    st.markdown("Instructions for the use of the Isolation Window")
-    st.write("")
+    st.markdown("Instructions for the use of the Isolation Window:")
+    st.write("Upon selecting this Isolation Window page, a spectrum plot is generated of the full MS1 scan of MRFA with a default centrepoint of 1215.0 and width of 15.0.")
+    st.write("To use this page, the parameters that can be adapted are the centrepoint of the isolation window and the width of the isolation window.")
+    st.write("Simply use the addition and subtraction buttons on the input box to select a number for each of these parameters to identify how adjustment of these parameters influence the isolation window.")
 
 with Isolation_tab:
     st.sidebar.title("Isolation Window Visualisation")
