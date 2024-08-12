@@ -14,11 +14,12 @@ def show():
             
               Use the sidebar to navigate between visualisations: 
                 - **2D Fragment Visualisation**: View the fragmentation pattern in a 2D Scatter plot.
-                - **3D Fragment Visualisation**: View the fragmentation pattern in a 3D scatter plot. 
+                - **Peptide and Protein Visualisation**: View Bradykinin in peptide structure and the full protein structure of Ubiquitin.
                 
                 ### How to Use:
-                1. Select the type of visualisation you would like to see from the sidebar. 
-                2. Interact with the plots to explore the fragments.
-                3. Use the available controls to customise visualisation. 
+                1. Select the type of visualisation you would like to see from the sidebar, i.e. 2D or 3D. 
+                2. Select the peptide you would like to view.
+                3. Interact with the plots to explore the fragments, peptides and final protein structure.
+                4. Use the available controls to customise visualisation. 
                 
                 """)

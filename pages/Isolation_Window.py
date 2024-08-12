@@ -76,19 +76,19 @@ def plot_spectrum(MRFA_file, isolation_centre, isolation_width):
     p.line('mzs', 'intensities', source=source_original, legend_label='Original Intensity', color=Spectral11[0], alpha=0.3, line_width=2)
     p.line('mzs', 'filtered_intensities', source=source_filtered, legend_label='Filtered Intensity', color=Spectral11[1], line_dash='dashed', line_width=2)
 
-
     p.legend.location = "top_left"
     p.legend.background_fill_color = 'white'
 
     return p
 
+
 def tophat(centre, width, xs):
     ys = np.zeros_like(xs)
     lowerl = centre - (width / 2)
-    upperl = centre - (width / 2)
-    ys[(xs > lowerl) & (xs < upperl)] = 1 
-
+    upperl = centre + (width / 2)  # Corrected upper limit
+    ys[(xs > lowerl) & (xs < upperl)] = 1
     return ys
+
 
 # Streamlit layout
 st.title("Isolation Window Visualization")
@@ -96,12 +96,17 @@ st.title("Isolation Window Visualization")
 # Streamlit layout, creation of tabs 
 Isolation_tab, Instruction_tab = st.tabs(["Isolation Window", "Instructions"])
 
+with Instruction_tab:
+    st.header("Instructions")
+    st.markdown("Instructions for the use of the Isolation Window")
+    st.write("")
+
 with Isolation_tab:
     st.sidebar.title("Isolation Window Visualisation")
-    st.sidebar.markdown("Explore the impact of the isolation window.... ")
+    st.sidebar.markdown("Explore the impact of the isolation window through changing the isolation centre and width.")
 
     isolation_centre = st.sidebar.number_input(
-        "Select the Centrepoint value (m/z) of the isolation window",
+        "Select the centrepoint value (m/z) of the isolation window",
         min_value=1.0,
         max_value=2000.0,
         value=1215.0,
@@ -115,16 +120,7 @@ with Isolation_tab:
         value=15.0,
         step=0.1,
         format="%0.1f")
-        
 
-bokeh_figure = plot_spectrum(MRFA_file_path, isolation_centre, isolation_width)
-st.bokeh_chart(bokeh_figure)
-
-with Instruction_tab:
-    st.header("Instructions")
-    st.markdown("Instructions for the use of the Isolation Window")
-    st.subheader("Isolation Window")
-    st.write("""
-
-""")
+    bokeh_figure = plot_spectrum(MRFA_file_path, isolation_centre, isolation_width)
+    st.bokeh_chart(bokeh_figure)
 

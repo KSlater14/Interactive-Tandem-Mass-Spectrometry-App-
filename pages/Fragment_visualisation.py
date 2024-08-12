@@ -12,8 +12,8 @@ import numpy as np
 with st.sidebar:
     selected = option_menu(
         "Menu", 
-        ["Home", "2D Fragment Visualization", "3D Fragment Visualization"], 
-        icons=["house", "scatter-plot", "graph-up"], 
+        ["Home", "2D Fragment Visualisation", "Peptide and Protein Visualisation"], 
+        icons=["house", "white_small_square", "graph-up"], 
         menu_icon="cast", 
         default_index=0)
 
@@ -21,10 +21,10 @@ with st.sidebar:
 if selected == "Home":
     from pages.Fragment_visualisation_pages import home
     home.show()
-elif selected == "2D Fragment Visualization":
+elif selected == "2D Fragment Visualisation":
     from pages.Fragment_visualisation_pages import fragment_visualisation_2d as fragment_visualisation_2d
     fragment_visualisation_2d.show()
-elif selected == "3D Fragment Visualization":
-    from pages.Fragment_visualisation_pages import fragment_visualisation_3d as fragment_visualisation_3d
-    fragment_visualisation_3d.show()
+elif selected == "Peptide and Protein Visualisation":
+    from pages.Fragment_visualisation_pages import Peptide_and_protein_visualisation as Peptide_and_protein_visualisation
+    Peptide_and_protein_visualisation.show()
 
