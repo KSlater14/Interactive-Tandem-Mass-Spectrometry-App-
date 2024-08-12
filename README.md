@@ -75,9 +75,9 @@ Install the required packages using pip:
 pip install -r requirements.txt 
 
 ## How to Run 
-1. Clone the Repository:
+1. **Clone the Repository:**
+```bash
 git clone https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-.git
-
 cd Interactive-Tandem-Mass-Spectrometry-App-
 
 2. Run the Streamlit App:
