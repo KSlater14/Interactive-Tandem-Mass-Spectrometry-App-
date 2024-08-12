@@ -11,7 +11,7 @@ This project is an interactive web application developed and designed for explor
 3. [Isolation Window](#isolation-window)
 4. [Fragment Visualisation](#fragment-visualisation)
     - [2D Fragment Visualisation](#2d-fragment-visualisation)
-    - [[Protein and Peptide Visualisation](#protein-and-peptide-visualisation)
+    - [Protein and Peptide Visualisation](#protein-and-peptide-visualisation)
 5. [Requirements](#requirements)
 6. [How to Run](#how-to-run)
 7. [Usage](#usage)
