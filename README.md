@@ -101,7 +101,7 @@ Install the required packages using pip:
 
 ```bash 
 pip install -r requirements.txt 
-
+```
 ```markdown
 ## How to Run 
 1. **Clone the Repository:**
