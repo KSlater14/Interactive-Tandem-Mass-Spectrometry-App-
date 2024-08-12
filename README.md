@@ -24,19 +24,19 @@ This project is an interactive web application developed and designed for explor
 
 The **Interactive Parameter Explorer** is the main page of the application. Users are able to interactively adjust parameters of provided data and observe real-time updates on Spectra. As well as the ability to upload their own data for exploration. Users can explore various settings and their effects on the data. 
 
-For the code of the Interactive Parameter Explorer, see the [Interactive_Parameter_Explorer.py](Interactive_Parameter_Explorer.py) file. 
+For the code of the Interactive Parameter Explorer, see the [Interactive_Parameter_Explorer.py](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/Interactive_Parameter_Explorer.py) file. 
 
 ## Peptide Explorer 
 
 The **Peptide Explorer** page provides the user with tools to visualise and analyse one full MS2 scan for each peptide. Users can select peptides and observe the fragmentation of the peptide via a spectrum plot. 
 
-For the code of the Peptide Explorer, see the [Peptide_Explorer.py](Peptide_Explorer.py) file. 
+For the code of the Peptide Explorer, see the [Peptide_Explorer.py](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/pages/Peptide_Explorer.py) file. 
 
 ## Isolation Window 
 
 The **Isolation Window** page allows users to adjust the isolation window settings (Centre and Width of the isolation window) to observe how these adjustments affect the visualisation of the mass spectrometry data. 
 
-For the code of the Isolation Window, see the [Isolation_Window.py](Isolation_Window.py) file. 
+For the code of the Isolation Window, see the [Isolation_Window.py](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/pages/Isolation_Window.py) file. 
 
 ## Fragment Visualisation
 
@@ -51,9 +51,9 @@ This sections allows users to visualise peptide fragments in 2D. The key feature
 ### Protein and Peptide Visualisation
 This section provides visualisations specifically for the Bradykinin peptide and the full protein structure of Ubiquitin. 
 
-For the code of the Fragment Visualisation, see the [Fragment_visualisation.py](Fragment_visualisation.py) file. 
-For the code of the 2D Fragment Visualisation, see the [fragment_visualisation_2d.py](fragment_visualisation_2d.py) file. 
-For the code of the Peptide and Protein Visualisation, see the code [Peptide_and_protein_visualisation.py](Peptide_and_protein_visualisation.py) file. 
+For the code of the Fragment Visualisation, see the [Fragment_visualisation.py](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/pages/Fragment_visualisation.py) file. 
+For the code of the 2D Fragment Visualisation, see the [fragment_visualisation_2d.py](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/pages/Fragment_visualisation_pages/fragment_visualisation_2d.py) file. 
+For the code of the Peptide and Protein Visualisation, see the code [Peptide_and_protein_visualisation.py](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/pages/Fragment_visualisation_pages/Peptide_and_protein_visualisation.py) file. 
 
 ## Requirements 
 
