@@ -74,16 +74,21 @@ Install the required packages using pip:
 ```bash 
 pip install -r requirements.txt 
 
-How to Run 
+```markdown
+## How to Run 
 1. **Clone the Repository:**
 ```bash
 git clone https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-.git
 cd Interactive-Tandem-Mass-Spectrometry-App-
 
+```markdown
 2. Run the Streamlit App:
+```bash
 streamlit run Interactive_Parameter_Explorer.py
 
+```markdown
 3. Open in Browser: 
+```bash
 Access the application via the URL provided by Streamlit. 
 
 ## Usage 
