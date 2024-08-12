@@ -108,14 +108,20 @@ The application uses mzML files for mass spectrometry data. The data files used 
 Contributions are welcome! Please fork the repository and submit pull requests with your changes. Follow the steps below: 
 1. Fork the Repository.
 2. Clone Your Fork:
+```bash
 git clone <your-fork-url>
+```
 3. Create a Branch:
+```bash
 git checkout -b feature-branch
+```
 4. Make Your Changes.
 5. Push to Your Fork:
-git add.
+```bash
+git add
 git commit -m "Description of changes"
 git push origin feature-branch 
+```
 6. Create a Pull Request. 
 
 ## License
