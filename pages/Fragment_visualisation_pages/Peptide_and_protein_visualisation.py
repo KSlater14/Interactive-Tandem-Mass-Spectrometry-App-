@@ -1,8 +1,5 @@
 import streamlit as st
 
-
-
-
 # Function to generate the HTML for JSmol viewer
 def generate_jsmol_html(pdb_id):
     return f"""

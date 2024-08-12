@@ -5,8 +5,6 @@ visualisation to meet the users requirements.
 """
 import streamlit as st
 from streamlit_option_menu import option_menu
-import plotly.graph_objects as go
-import numpy as np
 
 # Sidebar navigation menu setup
 with st.sidebar:
