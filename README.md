@@ -55,34 +55,6 @@ For the code of the Fragment Visualisation, see the [Fragment_visualisation.py](
 For the code of the 2D Fragment Visualisation, see the [fragment_visualisation_2d.py](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/pages/Fragment_visualisation_pages/fragment_visualisation_2d.py) file. 
 For the code of the Peptide and Protein Visualisation, see the code [Peptide_and_protein_visualisation.py](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/pages/Fragment_visualisation_pages/Peptide_and_protein_visualisation.py) file. 
 
-# Data
-The application uses mzML files for mass spectrometry data. The data files used for the application are all included in the repository. You can find and download them from the following directory:
-
-- [Data Directory](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/tree/main/Data)
-
-## Contributions 
-Contributions are welcome! Please fork the repository and submit pull requests with your changes. Follow the steps below: 
-1. Fork the Repository.
-2. Clone Your Fork:
-git clone <your-fork-url>
-3. Create a Branch:
-git checkout -b feature-branch
-4. Make Your Changes.
-5. Push to Your Fork:
-git add.
-git commit -m "Description of changes"
-git push origin feature-branch 
-6. Create a Pull Request. 
-
-## License
-This project is licensed under the MIT License- see the LICENSE file for details. 
-
-## Acknowledgments 
-Jedd Bellamy-Carter for his contribution to the app. 
-Bokeh for interactive plotting. 
-Streamlit for building the web app interface. 
-Pyteomics for handling mass spectrometry data. 
-
 ## Requirements 
 
 - Python 3.x 
@@ -102,22 +74,24 @@ Install the required packages using pip:
 ```bash 
 pip install -r requirements.txt 
 ```
-```markdown
+
 ## How to Run 
-1. **Clone the Repository:**
+1. Clone the Repository:
+
 ```bash
 git clone https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-.git
 cd Interactive-Tandem-Mass-Spectrometry-App-
+```
 
-```markdown
 2. Run the Streamlit App:
 ```bash
 streamlit run Interactive_Parameter_Explorer.py
+```
 
-```markdown
 3. Open in Browser: 
 ```bash
 Access the application via the URL provided by Streamlit. 
+``` 
 
 ## Usage 
 - Interactive Parameter Explorer: Adjust parameters and observe spectra changes in real-time. 
