@@ -1,10 +1,11 @@
 ## FRAGMENT VISUALISATION HOME ##
 """
-This script displays necessary information and instructions to help user utilise the fragment visualisation 
-menu and features. 
+This script displays the necessary information and instructions to help the user utilise the fragment visualisation 
+menu and navigate its features. 
 """
 import streamlit as st 
 
+## INSTRUCTIONS ##
 # Displays introductory text and instructions for the fragment visualisation features within the app
 def show(): 
     st.title("Fragment Visualisation")
@@ -23,4 +24,6 @@ def show():
                 4. Use the available controls to customise visualisation. 
                 
               For the best view of each plot, expand to full screen. 
+             
+              * Bradykinin and Ubiquitin plots taken directly from the Research Collaboratory for Structural Bioinformatics Protein Data Bank (RCSB PDB). 
                 """)

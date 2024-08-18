@@ -1,115 +1,114 @@
 ## INTERACTIVE PARAMETER EXPLORER ##
 """
-This script is used for the visualisation of mass spectrometry parameters. 
-It imports the required libraries, defines functions for peak detection, centroid calculation, 
+This script is used for the visualisation of Mass Spectrometry (MS) parameters. 
+It imports the necessary libraries, defines functions for peak detection, centroid calculation, 
 averages spectra, interpolates collision induced dissociation energy, retrieves fragments and includes 
 functionalities to load and process mzML data. 
 """
 import streamlit as st
 import numpy as np
-from scipy import signal
+import requests
+import io
 from bokeh.models import ColumnDataSource, LabelSet, HoverTool, Range1d
 from bokeh.plotting import figure
 from pyteomics import mzml, mass, parser
-import requests
-import io
+from scipy import signal
 
 
 ## FUNCTIONS ##
 
-def peak_detection(spectrum, threshold=5, distance=4, prominence=0.8, width=2, centroid=False):
-    # Calculates the relative intensity threshold for peak detection
+def peak_detection(spectrum, threshold=5, prominence=0.8, width=2, distance=4, centroid=False):
+    # Calculates relative intensity threshold for peak detection
     relative_threshold = spectrum['intensity array'].max() * (threshold / 100)
     if centroid:
-        # For centroid mode: Return indices where intensity exceeds the relative threshold
+        # For the centroid mode: Indices where the intensity exceeds the relative threshold are returned 
         peaks = np.where(spectrum['intensity array'] > relative_threshold)[0]
         return peaks
     else:
-        # For non-centroid mode: Use scipy's find_peak for detection of peaks with these specific properties 
+        # For non-centroid mode: scipy's find_peak for detection of peaks with specified propperties is used
         peaks, properties = signal.find_peaks(
             spectrum['intensity array'], 
+            width=width,
             height=relative_threshold, 
-            prominence=prominence, 
-            width=width, 
-            distance=distance
+            distance=distance,
+            prominence=prominence
             )
         return peaks, properties
 
-def return_centroid(spectrum, peaks, properties):
-    # Initialises an array to hold the centroid values
-    centroids = np.zeros_like(peaks, dtype='float32')
-    # Iterates over each detected peak
+def get_centroid(spectrum, peaks, properties):
+    # Initialises array to hold centroid values
+    _centroids = np.zeros_like(peaks, dtype='float32')
+    # Iterates over each peak detected 
     for i, peak in enumerate(peaks):
-        # Get left and right indices of the peak's range from the properties dictionary
+        # Retrieves right and left indices of peak's range from the dictionary: properties
         left_ip = int(properties['left_ips'][i])
         right_ip = int(properties['right_ips'][i])
         peak_range = range(left_ip, right_ip + 1)
         
-        mz_range = spectrum['m/z array'][peak_range]
+        mz_value_range = spectrum['m/z array'][peak_range]
         intensity_range = spectrum['intensity array'][peak_range]
 
-        # Calculate the centroid as the weighted average of m/z values based on intensity 
-        centroids[i] = np.sum(mz_range * intensity_range) / np.sum(intensity_range)
+        # Calculates centroid as the weighted average of m/z values based on intensity 
+        _centroids[i] = np.sum(mz_value_range * intensity_range) / np.sum(intensity_range)
 
-    return centroids
+    return _centroids
 
 
-def average_spectra(spectra, bin_width=None, filter_string=None):
-    # Initialises an array to hold reference m/z values taken from first spectrum 
+def average_spectra(spectra, filter_string=None, bin_width=None):
+    # Initialises an array to hold reference m/z values from the first spectrum 
     reference_scan = np.unique(spectra[0]['m/z array'])
-    # Set bin width for interpolation; if not provided, default to the minimum difference between m/z values
+    # Bin width set for interpolation; if bin width not provided, default set to the minimum difference between m/z values
     if bin_width is None:
         bin_width = np.min(np.diff(reference_scan))
 
-    # Determine m/z range from the scan window of the first spectrum  
+    # Determine m/z range from the first spectrum's scan window 
     scan_min = spectra[0]['scanList']['scan'][0]['scanWindowList']['scanWindow'][0]['scan window lower limit']
     scan_max = spectra[0]['scanList']['scan'][0]['scanWindowList']['scanWindow'][0]['scan window upper limit']
 
-    # Create a new m/z array with specified bin width for the averaged spectrum 
-    reference_mz = np.arange(scan_min, scan_max, bin_width)
-    # Initialises an array to accumulate the summed intensities over all spectra 
-    merge_intensity = np.zeros_like(reference_mz)
+    # Creates a new m/z array for the averaged spectrum with specified bin width
+    reference_mz_value = np.arange(scan_min, scan_max, bin_width)
+    # Initialises an array for the accumulation of the summed intensities across all spectra 
+    merge_intensity = np.zeros_like(reference_mz_value)
 
-    # Iterate over each spectrum to accumulate the interpolated intensities
+    # Iterate over each spectrum to accumulate interpolated intensities
     for scan in spectra:
-        tmp_mz = scan['m/z array']
-        tmp_intensity = scan['intensity array']
-        merge_intensity += np.interp(reference_mz, tmp_mz, tmp_intensity, left=0, right=0)
+        temp_mz = scan['m/z array'] # Temporary mz 
+        temp_intensity = scan['intensity array'] # Temporary intensity
+        merge_intensity += np.interp(reference_mz_value, temp_mz, temp_intensity, left=0, right=0)
 
-    # Averages accumulated intensities by dividing by the number of spectra 
-    merge_intensity = merge_intensity / len(spectra)
+    # Gives mean average of accumulated intensities by dividing by the number of spectra 
+    mean_intensity = merge_intensity / len(spectra)
 
-    avg_spec = spectra[0].copy()
-    avg_spec['m/z array'] = reference_mz
-    avg_spec['intensity array'] = merge_intensity
+    avg_spectrum = spectra[0].copy()
+    avg_spectrum['m/z array'] = reference_mz_value
+    avg_spectrum['intensity array'] = mean_intensity
 
-    avg_spec['scanList']['scan'][0]['filter string'] = "AV: {:.2f}-{:.2f}; {}".format(
+    avg_spectrum['scanList']['scan'][0]['filter string'] = "AV: {:.2f}-{:.2f}; {}".format(
         spectra[0]['scanList']['scan'][0]['scan start time'], 
-        spectra[-1]['scanList']['scan'][0]['scan start time'], 
-        filter_string)
+        spectra[-1]['scanList']['scan'][0]['scan start time'], filter_string)
 
-    return avg_spec
+    return avg_spectrum
 
 def interpolate_spectra(spectra, target_energies, energies=[0, 5, 10, 15, 20]):
-    # Extract intensity arrays from each spectrum in the input list 
+    # Extracts intensity arrays from each spectrum in the input list 
     intensity_arrays = [spectrum['intensity array'] for spectrum in spectra]
-    # Initialises a dictionary to hold the lists of interpolated intensity values 
+    # Initialises a dictionary to hold interpolated intensity values 
     interpolated_spectra = {target_energy: [] for target_energy in target_energies}
 
-    # Iterate over each index in the intensity arrays and extract intensity values from each spectrum for the current index
+    # Iterate over each index in the intensity arrays and extract intensity values for the current index from each spectrum 
     for i in range(len(intensity_arrays[0])):
-        intensities = [intensity_arrays[j][i] for j in range(len(energies))]
+        _intensities = [intensity_arrays[index][i] for index in range(len(energies))]
         
         # Interpolate intensity values for each target array
         for target_energy in target_energies:
             if target_energy < energies[0] or target_energy > energies[-1]:
-                raise ValueError(f"Target energy {target_energy} is outside the range of energies in the spectra.")
+                raise ValueError(f"Target energy {target_energy} not in the available range of energies in the spectra.")
             
             # Performs interpolation to estimate the intensity at target energy 
-            interpolated_intensity = np.interp(target_energy, energies, intensities)
+            interpolated_intensity = np.interp(target_energy, energies, _intensities)
             interpolated_spectra[target_energy].append(interpolated_intensity)
     
-    return {k: np.array(v) for k, v in interpolated_spectra.items()}
+    return {key: np.array(value) for key, value in interpolated_spectra.items()}
 
 # Standard amino acid masses with additional modifications for specific post-translational modifications 
 aa_mass = mass.std_aa_mass
@@ -123,9 +122,9 @@ def get_fragments(sequence, selected_charge_state, peaks_data, ion_types=('b', '
     _sequence = parser.parse(sequence) 
 
     pep_length = len(_sequence)
-    print(f"Peptide length: {pep_length}")
+    print(f"Length of Peptide: {pep_length}")
 
-    # Defines neutral losses which can occur during fragmentation
+    # Defines neutral losses which occur during fragmentation
     neutral_losses = {
         '': 0, 
         '-H2O': -18.01528, 
@@ -136,7 +135,7 @@ def get_fragments(sequence, selected_charge_state, peaks_data, ion_types=('b', '
         tolerance = 0.2 
         return any(abs(mass - peak) <= tolerance for peak in peaks_data)
 
-    # Iterate over each position in the peptide sequence to generate fragments
+    # Iterate over each position in peptide sequence for fragment generation 
     for pos in range(1, pep_length):
         for ion_type in ion_types:
        
@@ -155,9 +154,9 @@ def get_fragments(sequence, selected_charge_state, peaks_data, ion_types=('b', '
                     # Determine ion label based on ion type and neutral loss and charge state 
                     ion_label = ion_type + str(pos) + loss + "+"*charge  
 
-                    # Check if calculated mass is close to any of observed peaks
+                    # Check if calculated mass is close to any observed peaks
                     if is_in_peaks_data(_mass):
-                            fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': ion_type})
+                            fragments.append({'sequence': seq, 'ion': ion_label, 'm/z': _mass, 'type': ion_type})
                             print(f"Annotated fragment: {ion_label}, m/z: {_mass}")
 
     # Handle precursor ion annotation
@@ -171,7 +170,7 @@ def get_fragments(sequence, selected_charge_state, peaks_data, ion_types=('b', '
             ion_label = "M" + loss + "+"*charge
 
             if is_in_peaks_data(_mass):
-                    fragments.append({'seq': seq, 'ion': ion_label, 'm/z': _mass, 'type': "M"})
+                    fragments.append({'sequence': seq, 'ion': ion_label, 'm/z': _mass, 'type': "M"})
                     print(f"Annotated fragment: {ion_label}, m/z: {_mass}")
         
     return fragments
@@ -181,7 +180,6 @@ def load_predefined_data(peptide, charge_state, resolution, energy_ramp, isolati
         ('MRFA', '1+', 'Enhanced', 'Iso 1', 'Centre'): 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data/MRFA/05Mar2024_MJ_MRFA_1%2B_collision_energy_ramp_enhanced_01.mzML',
         ('MRFA', '1+', 'Turbo', 'Iso 1', 'Centre'): 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data/MRFA/05Mar2024_MJ_MRFA_1%2B_collision_energy_ramp_turbo_01.mzML',
         ('MRFA', '1+', 'Zoom', 'Iso 1', 'Centre'): 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data/MRFA/05Mar2024_MJ_MRFA_1%2B_collision_energy_ramp_zoom_01.mzML',
-
         ('MRFA', '2+', 'Zoom', 'Iso 1', 'Centre'): 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data/MRFA/05Mar2024_MJ_MRFA_2%2B_collision_energy_ramp_zoom_01.mzML',
         ('MRFA', '2+', 'Zoom', 'Iso 2', 'Centre'): 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data/MRFA/12Mar2024_MJ_MRFA_2%2B_collision_energy_ramp_zoom_iso_2.mzML',
         ('MRFA', '2+', 'Zoom', 'Iso 3', 'Centre'): 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data/MRFA/12Mar2024_MJ_MRFA_2%2B_collision_energy_ramp_zoom_iso_3.mzML',
@@ -246,36 +244,34 @@ def load_predefined_data(peptide, charge_state, resolution, energy_ramp, isolati
     }
 
     if isolation is not None and (peptide == "Bradykinin"):
-        # Special circumstance for Bradykinin with a difference in isolation
+        # Bradykinin has different isolation, exception to other peptides 
         selected_file_url = file_map.get((peptide, charge_state, resolution, energy_ramp, isolation))
     else: 
-        # Default for other peptides or if the isolation is None
+        # Use default for other peptides 
         selected_file_url = file_map.get((peptide, charge_state, resolution, energy_ramp, "Centre"))
 
-
     if selected_file_url:
-        response = requests.get(selected_file_url)
+        file_response = requests.get(selected_file_url)
         # Convert response content to a BytesIO object
-        raw_data = io.BytesIO(response.content)
+        raw_data = io.BytesIO(file_response.content)
         reader = mzml.read(raw_data, use_index=True)
-        
 
         scan_energy_list = {}
     # Process each scan in the mzML file 
     reader.reset()
     for scan in reader:
-        idx = scan['index']
-        if scan['ms level'] == 1:
+        x = scan['index']
+        if scan['ms level'] == 1: 
             continue  # Skip MS1 scans
 
-        # Checks scan for precursor information and if collision energy is available in precursor information 
+        # Checks scan for precursor information and checks collision energy is available in precursor info
         if 'precursorList' in scan and 'precursor' in scan['precursorList'] and len(scan['precursorList']['precursor']) > 0:
             if 'activation' in scan['precursorList']['precursor'][0] and 'collision energy' in scan['precursorList']['precursor'][0]['activation']:
-                energy = scan['precursorList']['precursor'][0]['activation']['collision energy']
-                if energy not in scan_energy_list:
-                    scan_energy_list[energy] = []
+                _energy = scan['precursorList']['precursor'][0]['activation']['collision energy']
+                if _energy not in scan_energy_list:
+                    scan_energy_list[_energy] = []
                 # Appends the scan index to the list for energy if not already present 
-                scan_energy_list[energy].append(idx)
+                scan_energy_list[_energy].append(x)
     
     return reader, scan_energy_list
     
@@ -286,23 +282,24 @@ def load_data(raw_file):
     scan_energy_list = {}
     reader.reset()
     for scan in reader:
-        idx = scan['index']
+        x = scan['index']
         if scan['ms level'] == 1:
             continue  # Skip MS1 scans
         if 'precursorList' in scan and 'precursor' in scan['precursorList'] and len(scan['precursorList']['precursor']) > 0:
             if 'activation' in scan['precursorList']['precursor'][0] and 'collision energy' in scan['precursorList']['precursor'][0]['activation']:
-                energy = scan['precursorList']['precursor'][0]['activation']['collision energy']
-                if energy not in scan_energy_list:
-                    scan_energy_list[energy] = []
-                scan_energy_list[energy].append(idx)
+                _energy = scan['precursorList']['precursor'][0]['activation']['collision energy']
+                if _energy not in scan_energy_list:
+                    scan_energy_list[_energy] = []
+                scan_energy_list[_energy].append(x)
     
     return reader, scan_energy_list
 
 ## APP LAYOUT ##
 
-# Set up the confifguration for the Streamlit app 
-st.set_page_config(page_title="Interactive mzML Parameter Explorer", layout="wide", menu_items={
-    'about': "This application is a parameter explorer for mzML mass spectrometry data. Written by Kiah Slater."})
+# Set up the configuration for the Streamlit app 
+st.set_page_config(page_title="Interactive mzML Parameter Explorer", 
+                   layout="wide", 
+                   menu_items={'about': "This application is a parameter explorer for mzML mass spectrometry data. Written by Kiah Slater."})
 
 st.sidebar.title("Interactive mzML Parameter Explorer")
 st.sidebar.markdown("This is an interactive parameter explorer for mass spectrometry data stored in .mzML data format")
@@ -349,6 +346,8 @@ peptide_options = {
         "energy_ramps": ["Iso 1"]
     }
 }
+
+        ## SIDEBAR LAYOUT ##
 
 # Streamlit sidebar widgets
 use_predefined_data = st.sidebar.checkbox(
@@ -397,12 +396,15 @@ if selected_energy_ramp_options:
 else:
     selected_energy_ramp = None
 
-# Conditionally show isolation selectbox based on selected peptide
+# Show isolation selectbox options if Bradykinin is selected
 if use_predefined_data and selected_peptide == "Bradykinin":
     isolation_options = ["Centre", "Defined"]
     selected_isolation = st.sidebar.selectbox("Select Isolation", isolation_options)
 else:
     selected_isolation = None
+
+
+    ## TAB LAYOUT ##
 
 # Creates tabs in the Streamlit app for displaying the spectrum and instructions 
 spectrum_tab, instructions_tab = st.tabs(["Spectrum", "Instructions"])
@@ -422,9 +424,9 @@ with instructions_tab:
     st.markdown("Instructions for the use of the Interactive Parameter Explorer")
     st.subheader("Data Selection")
     st.write("""
-- To begin the user can use either the predefined data by selecting the toggle box or 
-             can use their own data in the MZML format via the drag and drop box. 
-- Once the data has been selected, the spectra will automatically be plotted.
+- To begin the user can either use the predefined data by selecting the toggle box or 
+             use their own data in the mzML format via the drag and drop box. 
+- Once the data has been selected, the spectra will be plotted automatically.
              """)
     
     # Creates two columns to display images side by side 
@@ -438,15 +440,14 @@ with instructions_tab:
     st.subheader("Changing the parameters")
     st.write("""
     - Both the settings and parameters can be changed. 
-    - The parameters can be changed via the sidebar, 
-             which allows the peptide, charge state, resolution, energy ramp and isolation to be changed for the predefined data. """)
+    - The parameters can be changed via the sidebar, which allows the peptide, charge state, resolution, energy ramp and isolation to be changed for the predefined data. """)
     st.image(image_parameter_selection, caption='Parameter Selection', width=300)
     
     ("""
-    - The changing of parameters via the sidebar is not applicable if the user choses to upload their own data. 
+    - The changing of parameters via the sidebar is not applicable if the user chooses to upload their own data. 
     - Once the parameters have been selected or the users data inserted, the settings of the plot can be altered. 
     - The Settings:
-        - Allows for a collision induced dissociation (CID) energy to be selected, which displays the spectrum with the changing collision energy. 
+        - Allows for a collision induced dissociation (CID) energy to be selected, which displays the spectrum with the selected collision energy. 
         - Allows for m/z labels to be selected to label the spectrum. The threshold of these labels can be selected too.
         - Checkbox can be selected to annotate the fragments with the ions within the spectrum. 
              """)
@@ -499,7 +500,7 @@ label_ions = True
 
 # Streamlit layout for displaying the spectrum tab 
 with spectrum_tab: 
-    scol1, scol2 = st.columns([0.3, 0.7])
+    scol1, scol2 = st.columns([0.2, 0.5])
     with scol1:
         if reader is not None:
             st.markdown("### Settings")
@@ -537,35 +538,35 @@ with spectrum_tab:
                 value=2, 
                 help="Label peaks with intensity above threshold% of maximum.")
             labels_on = st.checkbox("Show m/z labels", help="Display all peak labels on plot.", value=True)
-            label_ions = st.checkbox("Annotate Spectrum", help="Display all fragment labels on plot", value=False)
+            label_ions = st.checkbox("Annotate Fragments", help="Display all fragment labels on plot", value=False)
             
             # Plot spectrum function
             def plot_spectrum(selected_scan, labels_on, label_ions, selected_peptide):
                 # Create a Bokeh figure for the plot 
-                spectrum_plot = figure(
-                    x_axis_label='m/z',
+                _spectrum_plot = figure(
                     y_axis_label='intensity',
+                    x_axis_label='m/z',
                     tools='pan,box_zoom,xbox_zoom,reset,save',
                     active_drag='xbox_zoom'
     )
-                # Format the y-axis and x-axis 
-                spectrum_plot.left[0].formatter.use_scientific = True
-                spectrum_plot.left[0].formatter.power_limit_high = 0
-                spectrum_plot.left[0].formatter.precision = 1
-                spectrum_plot.y_range.start = 0
+                # Format the y-axis and x-axis on the plot 
+                _spectrum_plot.left[0].formatter.use_scientific = True
+                _spectrum_plot.left[0].formatter.power_limit_high = 0
+                _spectrum_plot.left[0].formatter.precision = 1
+                _spectrum_plot.y_range.start = 0
 
                 # Set x-axis range based on scan window 
                 if 'scanList' in selected_scan and 'scan' in selected_scan['scanList'] and len(selected_scan['scanList']['scan']) > 0:
                     if 'scanWindowList' in selected_scan['scanList']['scan'][0]:
                         min_mz = selected_scan['scanList']['scan'][0]['scanWindowList']['scanWindow'][0]['scan window lower limit']
                         max_mz = selected_scan['scanList']['scan'][0]['scanWindowList']['scanWindow'][0]['scan window upper limit']
-                        spectrum_plot.x_range = Range1d(min_mz, max_mz, bounds="auto")
+                        _spectrum_plot.x_range = Range1d(min_mz, max_mz, bounds="auto")
 
-                spectrum_plot.line(selected_scan['m/z array'], selected_scan['intensity array'], line_width=2, color='black')
+                _spectrum_plot.line(selected_scan['m/z array'], selected_scan['intensity array'], line_width=1.5, color='black')
 
                 # Peak detection and centroid calculation
                 _peaks, _properties = peak_detection(selected_scan, threshold=5, centroid=False)
-                _peak_centroids = return_centroid(selected_scan, _peaks, _properties)
+                _peak_centroids = get_centroid(selected_scan, _peaks, _properties)
 
                 # Create ColumnDataSource for peaks
                 peaks_data = {
@@ -574,33 +575,33 @@ with spectrum_tab:
                     'cent': ["%.2f" % x for x in _peak_centroids]
     }
                 peaks_source = ColumnDataSource(data=peaks_data if _peaks.size > 0 else {'x': [], 'y': [], 'cent': []})
-                r = spectrum_plot.circle('x', 'y', size=5, source=peaks_source, color='red')
+                r = _spectrum_plot.circle('x', 'y', size=4, source=peaks_source, color='red')
 
-                # Hover tool configuration
-                hover = HoverTool(tooltips=[
+                # Configures hover tool 
+                hover_tool = HoverTool(tooltips=[
                     ("m/z", "@x{0.00}"),
-                    ("intensity", "@y{0.0}"),
+                    ("intensity", "@y{0.00}"),
                     ("centroid", "@cent{0.00}")
                 ], renderers=[r])
-                spectrum_plot.add_tools(hover)
+                _spectrum_plot.add_tools(hover_tool)
 
                 # Conditionally add labels if labels_on is True
                 if labels_on:
                     labels = LabelSet(x='x', 
-                                      y='y', 
-                                      text='cent', 
+                                      y='y',  
                                       source=peaks_source, 
+                                      text='cent',
                                       text_font_size='8pt', 
                                       text_color='black')
-                    spectrum_plot.add_layout(labels)
+                    _spectrum_plot.add_layout(labels)
                 
-                # Conditionally annotates spectrum with theoretical fragments if label_ions is True
+                # Conditionally annotate spectrum with theoretical fragments if label_ions is True
                 if label_ions:
-                        cleaned_charge_state = int(selected_charge_state.rstrip('+'))  # Remove '+' and convert to integer
+                        charge_state_cleaned = int(selected_charge_state.rstrip('+'))  # Remove '+' and convert charge state to integer
 
-                        fragments = get_fragments(peptide_options[selected_peptide]['sequence'], cleaned_charge_state, _peak_centroids)
+                        fragments = get_fragments(peptide_options[selected_peptide]['sequence'], charge_state_cleaned, _peak_centroids)
                            
-                        # Annotate spectrum with theoretical fragments
+                        # Annotate the spectrum with theoretical fragments
                         ions_data = {
                             'x': [frag['m/z'] for frag in fragments],
                             'y': [selected_scan['intensity array'][np.argmin(np.abs(selected_scan['m/z array'] - frag['m/z']))] * 1.05 for frag in fragments],
@@ -610,20 +611,19 @@ with spectrum_tab:
 
                         ion_labels = LabelSet(x='x', 
                                               y='y', 
-                                              text='ion_type', 
                                               source=ions_source, 
+                                              text='ion_type', 
                                               text_font_size='8pt', 
                                               text_color='blue', 
-                                              y_offset=8)
-                        spectrum_plot.add_layout(ion_labels)
+                                              y_offset=10,
+                                              x_offset=1.5)
+                        _spectrum_plot.add_layout(ion_labels)
 
-                        print(type(spectrum_plot))  
-                        print(spectrum_plot)        
+                        print(_spectrum_plot)        
 
-                return spectrum_plot
+                return _spectrum_plot
 
     with scol2:
         if reader is not None:
-            # Plot the spectrum and display it 
-            spectrum_plot = plot_spectrum(selected_scan, labels_on, label_ions, selected_peptide)
-            st.bokeh_chart(spectrum_plot, use_container_width=True)
+            _spectrum_plot = plot_spectrum(selected_scan, labels_on, label_ions, selected_peptide)
+            st.bokeh_chart(_spectrum_plot, use_container_width=True)

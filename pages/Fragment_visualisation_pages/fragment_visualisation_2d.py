@@ -4,20 +4,21 @@ This script allows for the 2D visualisation of the fragments found in each pepti
 
 """
 import streamlit as st
-from bokeh.models import ColumnDataSource, HoverTool, LegendItem
-from bokeh.plotting import figure
-from bokeh.palettes import Category10
 import numpy as np
-from pyteomics import mzml, parser, mass
+import pandas as pd
 import requests
 import io
 import math
+from bokeh.models import ColumnDataSource, HoverTool, LegendItem
+from bokeh.plotting import figure
+from bokeh.palettes import Category10
+from pyteomics import mzml, parser, mass
 from scipy import signal
-import pandas as pd
+
 ## FUNCTIONS ##
 
 # Peak detection function
-def peak_detection(spectrum, threshold=5, distance=4, prominence=0.8, width=2, centroid=False):
+def peak_detection(spectrum, threshold=5, prominence=0.8, width=2, distance=4, centroid=False):
     relative_threshold = spectrum['intensity array'].max() * (threshold / 100)
     if centroid:
         peaks = np.where(spectrum['intensity array'] > relative_threshold)[0]
@@ -25,23 +26,29 @@ def peak_detection(spectrum, threshold=5, distance=4, prominence=0.8, width=2, c
     else:
         peaks, properties = signal.find_peaks(
             spectrum['intensity array'], 
+            width=width,
             height=relative_threshold, 
-            prominence=prominence, 
-            width=width, 
-            distance=distance)
+            distance=distance,
+            prominence=prominence
+            )
         return peaks, properties
 
 # Centroid calculation function
-def return_centroid(spectrum, peaks, properties):
-    centroids = np.zeros_like(peaks, dtype='float32')
+def get_centroid(spectrum, peaks, properties):
+    _centroids = np.zeros_like(peaks, dtype='float32')
+    mz_array = spectrum['m/z array']
+    intensity_array = spectrum['intensity array']
+
     for i, peak in enumerate(peaks):
         left_ip = int(properties['left_ips'][i])
         right_ip = int(properties['right_ips'][i])
         peak_range = range(left_ip, right_ip + 1)
-        mz_range = spectrum['m/z array'][peak_range]
-        intensity_range = spectrum['intensity array'][peak_range]
-        centroids[i] = np.sum(mz_range * intensity_range) / np.sum(intensity_range)
-    return centroids
+
+        mz_value_range = mz_array[peak_range]
+        intensity_range = intensity_array[peak_range]
+
+        _centroids[i] = np.sum(mz_value_range * intensity_range) / np.sum(intensity_range)
+    return _centroids
 
 
 aa_mass = mass.std_aa_mass
@@ -101,36 +108,31 @@ def get_fragments(sequence, selected_charge_state, peaks_data, isolation_window,
 
 # Function to load mzML data
 def load_mzml_data(peptide):
-    file_map = {
+    file_path = {
         'MRFA': 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data/MRFA/12Mar2024_MJ_MRFA_full_scan_enhanced.mzML',
         'Bradykinin': 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data/Bradykinin/13Mar2024_MJ_bradykinin.mzML',
         'GRGDS': 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data/GRGDS/21Mar2024_MJ_GRGDS_full_ms.mzML',
         'SDGRG': 'https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/main/Data/SDGRG/21Mar2024_MJ_SDGRG_full_ms.mzML'
     }
-    file_url = file_map.get(peptide)
+    file_url = file_path.get(peptide)
     if file_url:
-        try:
-            response = requests.get(file_url)
-            if response.status_code == 200:
-                mzml_data = io.BytesIO(response.content)
+            file_response = requests.get(file_url)
+            if file_response.ok:
+                mzml_data = io.BytesIO(file_response.content)
                 spectra = list(mzml.read(mzml_data))
                 return spectra
             else:
-                print(f"Failed to fetch data. HTTP Status Code: {response.status_code}")
+                print(f"Unable to retrieve file.")
                 return None
-        except Exception as e:
-            print(f"Error loading mzML data: {e}")
-            return None
     else:
-        print("No mzML data available for the selected peptide.")
+        print("mzML data unavailable for the selected peptide.")
         return None
-
 
 
 # Plot fragments function
 def plot_fragments(fragments, sequence):
     if not fragments:
-        st.write("No fragments found to plot.")
+        st.write("Unable to plot: No fragments found.")
         return
     
     # Extract m/z values, ion types, and ion labels from the fragments
@@ -274,7 +276,7 @@ def show():
         peaks, properties = peak_detection(spectrum)
 
         # Get centroid m/z values for the peaks
-        peaks_data = return_centroid(spectrum, peaks, properties)
+        peaks_data = get_centroid(spectrum, peaks, properties)
 
         # Annotate fragments based on peaks data and isolation window
         fragments = get_fragments(peptide_sequence, selected_charge_state, peaks_data, isolation_window)
