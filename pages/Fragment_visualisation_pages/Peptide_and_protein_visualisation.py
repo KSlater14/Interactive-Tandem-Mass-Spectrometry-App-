@@ -55,9 +55,9 @@ def show():
     pdb_id = peptide_pdb[selected_peptide]
 
     # Generates HTML JSmol viewer of selected peptide with chosen style 
-    content_html = generate_jsmol_html(pdb_id, display_mode)
+    JSmol_viewer = generate_jsmol_html(pdb_id, display_mode)
     # Embedding of the JSmol viewer into Streamlit app 
-    st.components.v1.html(content_html, height=650)
+    st.components.v1.html(JSmol_viewer, height=650)
 
 if __name__ == "__main__":
     show()
