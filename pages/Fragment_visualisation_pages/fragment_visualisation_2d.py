@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 import requests
 import io
-import math
 from bokeh.models import ColumnDataSource, HoverTool, LegendItem
 from bokeh.plotting import figure
 from bokeh.palettes import Category10
@@ -145,8 +144,8 @@ def plot_fragments(fragments, sequence):
     ion_end = [fragment.get('end', fragment['m/z'] + 0.5) for fragment in fragments]
 
     # Define colors for different ion types
-    colors = {'b': 'blue', 'y': 'red', 'M': 'orange', '': 'black'}
-    color_values = [colors.get(ion_type, 'black') for ion_type in ion_types]
+    _colours = {'b': 'blue', 'y': 'red', 'M': 'orange', '': 'pink'}
+    colour_values = [_colours.get(ion_type, 'black') for ion_type in ion_types]
 
     # Create a ColumnDataSource from the fragment data
     fragment_data = ColumnDataSource(data=dict(
@@ -156,11 +155,11 @@ def plot_fragments(fragments, sequence):
         ion_end=ion_end,
         ion_types=ion_types,
         pep_sequence=pep_sequence,
-        color_values=color_values
+        color_values=colour_values
     ))
     
     # Create a Bokeh figure for the plot
-    p = figure(
+    _plot = figure(
         title="Fragment Ion Visualisation",
         x_axis_label='m/z',
         y_axis_label='Ion',
@@ -170,32 +169,32 @@ def plot_fragments(fragments, sequence):
     )
 
     # Add horizontal bars for each fragment ion
-    hbars = p.hbar(
+    h_bars = _plot.hbar(
         y='ion_labels',
         left='ion_start',
         right='ion_end',
+         source=fragment_data,
         height=0.7,
-        color='color_values',
-        source=fragment_data
+        color='color_values'
     )
 
     # Add HoverTool for displaying tooltips
-    hover = HoverTool(
+    hover_tool = HoverTool(
         tooltips=[
             ("m/z", "@mz_values"),
             ("Ion", "@ion_labels"),
             ("Type", "@ion_types"),
             ("Sequence", "@pep_sequence")
         ], 
-        renderers=[hbars]
+        renderers=[h_bars]
     )
-    p.add_tools(hover)
+    _plot.add_tools(hover_tool)
  
-    offset = 4 
+    offset = 4
 
     # Add the sequence text labels to the plot
     for i, (mz, ion_label, pep_seq) in enumerate(zip(mz_values, ion_labels, pep_sequence)):
-        p.text(
+        _plot.text(
             x=[mz + offset], 
             y=[ion_label], 
             text=[sequence[:pep_seq]], 
@@ -206,41 +205,41 @@ def plot_fragments(fragments, sequence):
 
     # Set x-axis ticks and labels
     if mz_values:
-        max_mz = math.ceil(max(mz_values))  # Round up to the nearest integer
-        x_ticks = list(range(0, max_mz + 1, 10))  # Create ticks at every 10 units
-        p.xaxis.ticker = x_ticks
-        p.xaxis.major_label_overrides = {tick: str(tick) for tick in x_ticks}
+        max_mz_value = int(np.ceil(max(mz_values)))  # Round up to the nearest integer
+        x_ticks = list(range(0, max_mz_value + 1, 10))  # Create ticks at every 10 units
+        _plot.xaxis.ticker = x_ticks
+        _plot.xaxis.major_label_overrides = {tick: str(tick) for tick in x_ticks}
     else:
-        p.xaxis.ticker = [0]
+        _plot.xaxis.ticker = [0]
 
-    p.xaxis.major_label_orientation = 1
+    _plot.xaxis.major_label_orientation = 1
 
     # Create legend items for each ion type
-    legend_items = []
-    unique_ion_types = set(ion_types)  # Get unique ion types to avoid duplicate legend items
-    for ion_type in unique_ion_types:
-        color = colors.get(ion_type, 'black')
+    ion_legend_items = []
+    unique_ions = set(ion_types)  # Get unique ion types to avoid duplicate legend items
+    for ion_type in unique_ions:
+        colour = _colours.get(ion_type, 'pink')
         
         # Create a dummy plot for the legend item
         legend_source = ColumnDataSource(data=dict(x=[0], y=[0]))
         
         # Create a glyph for the legend item
-        legend_glyph = p.scatter(
+        ion_legend_glyph = _plot.scatter(
             x='x',
             y='y',
-            color=color,
-            size=8,
             source=legend_source,
+            color=colour,
+            size=8,
             legend_label=ion_type
         )
         
-        legend_items.append(LegendItem(label=f"{ion_type}", renderers=[legend_glyph]))
+        ion_legend_items.append(LegendItem(label=f"{ion_type}", renderers=[ion_legend_glyph]))
 
     # Configure the appearance of the legend
-    p.legend.title = 'Ion Type'
-    p.legend.location = 'right'
+    _plot.legend.title = 'Ion Type'
+    _plot.legend.location = 'bottom_right'
  
-    st.bokeh_chart(p, use_container_width=True)
+    st.bokeh_chart(_plot, use_container_width=True)
 
 
 # Function to display the Streamlit app interface 
@@ -258,7 +257,7 @@ def show():
     )
 
     peptide_sequence = peptide_options[selected_peptide_name]
-    st.write(f"Selected Peptide Sequence: {peptide_sequence}")
+    st.write(f"Sequence of Selected Peptide: {peptide_sequence}")
 
     # User-selectable slider for charge state
     selected_charge_state = st.slider(
@@ -273,10 +272,10 @@ def show():
     mzml_data = load_mzml_data(selected_peptide_name)
     if mzml_data is not None:
         spectrum = mzml_data[0]
-        peaks, properties = peak_detection(spectrum)
+        _peaks, _properties = peak_detection(spectrum)
 
         # Get centroid m/z values for the peaks
-        peaks_data = get_centroid(spectrum, peaks, properties)
+        peaks_data = get_centroid(spectrum, _peaks, _properties)
 
         # Annotate fragments based on peaks data and isolation window
         fragments = get_fragments(peptide_sequence, selected_charge_state, peaks_data, isolation_window)
@@ -287,7 +286,7 @@ def show():
         # Convert fragments data to a DataFrame for display 
         df_fragments = pd.DataFrame(fragments)
         # Display the fragments in a table, with columns as specified 
-        st.table(df_fragments[['type', 'm/z', 'ion']])
+        st.table(df_fragments[['m/z', 'type', 'ion']])
        
 if __name__ == "__main__":
     show()
