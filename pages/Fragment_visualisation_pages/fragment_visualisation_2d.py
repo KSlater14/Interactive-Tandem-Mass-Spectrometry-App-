@@ -1,7 +1,7 @@
 ## FRAGMENT VISUALISATION 2D ##
 """
-This script allows for the 2D visualisation of the fragments found in each peptide.
-
+This script allows for the 2D visualisation of the fragments found in each peptide. Include in the visualisation is 
+a scatter plot and a table containing m/z value, the ion type and the specfic ion.
 """
 import streamlit as st
 import numpy as np
@@ -134,7 +134,7 @@ def plot_fragments(fragments, sequence):
         st.write("Unable to plot: No fragments found.")
         return
     
-    # Extract m/z values, ion types, and ion labels from the fragments
+    # Extracts m/z values, ion labels, ion types and the peptide sequence from the fragments
     mz_values = [fragment['m/z'] for fragment in fragments]
     ion_labels = [fragment['ion'] for fragment in fragments]
     ion_types = [fragment['type'] for fragment in fragments]
@@ -147,7 +147,7 @@ def plot_fragments(fragments, sequence):
     _colours = {'b': 'blue', 'y': 'red', 'M': 'orange', '': 'pink'}
     colour_values = [_colours.get(ion_type, 'black') for ion_type in ion_types]
 
-    # Create a ColumnDataSource from the fragment data
+    # ColumnDataSource is created from the fragment data
     fragment_data = ColumnDataSource(data=dict(
         mz_values=mz_values,
         ion_labels=ion_labels,
@@ -158,7 +158,7 @@ def plot_fragments(fragments, sequence):
         color_values=colour_values
     ))
     
-    # Create a Bokeh figure for the plot
+    # Creates the Bokeh figure to be plotted 
     _plot = figure(
         title="Fragment Ion Visualisation",
         x_axis_label='m/z',
@@ -216,11 +216,11 @@ def plot_fragments(fragments, sequence):
 
     # Create legend items for each ion type
     ion_legend_items = []
-    unique_ions = set(ion_types)  # Get unique ion types to avoid duplicate legend items
+    unique_ions = set(ion_types)  # To avoid duplicate legend items: get unique ion types 
     for ion_type in unique_ions:
         colour = _colours.get(ion_type, 'pink')
         
-        # Create a dummy plot for the legend item
+        # Create a temporary plot for the legend item
         legend_source = ColumnDataSource(data=dict(x=[0], y=[0]))
         
         # Create a glyph for the legend item
@@ -235,14 +235,14 @@ def plot_fragments(fragments, sequence):
         
         ion_legend_items.append(LegendItem(label=f"{ion_type}", renderers=[ion_legend_glyph]))
 
-    # Configure the appearance of the legend
+    # Configure the aesthetic of the legend
     _plot.legend.title = 'Ion Type'
     _plot.legend.location = 'bottom_right'
  
     st.bokeh_chart(_plot, use_container_width=True)
 
 
-# Function to display the Streamlit app interface 
+# Displays Streamlit interface when called upon  
 def show():
     peptide_options = {
         'MRFA': 'MRFA',
@@ -259,7 +259,7 @@ def show():
     peptide_sequence = peptide_options[selected_peptide_name]
     st.write(f"Sequence of Selected Peptide: {peptide_sequence}")
 
-    # User-selectable slider for charge state
+    # User-selectable slider to select charge state
     selected_charge_state = st.slider(
         "Select Charge State", 
         min_value=1, 
@@ -268,16 +268,16 @@ def show():
 
     isolation_window = (0.0, 2000.0)
    
-    # Load mzML data
+    # Loads the mzML data
     mzml_data = load_mzml_data(selected_peptide_name)
     if mzml_data is not None:
         spectrum = mzml_data[0]
         _peaks, _properties = peak_detection(spectrum)
 
-        # Get centroid m/z values for the peaks
+        # Retrieves centroid m/z values for detected peaks 
         peaks_data = get_centroid(spectrum, _peaks, _properties)
 
-        # Annotate fragments based on peaks data and isolation window
+        # Annotates fragments based on peaks data, peptide sequence, selected charge state and isolation window
         fragments = get_fragments(peptide_sequence, selected_charge_state, peaks_data, isolation_window)
         
         # Pass both fragments and peptide_sequence to plot_fragments

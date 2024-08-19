@@ -1,46 +1,64 @@
+## PEPTIDE AND PROTEIN VISUALISATION ##
+"""
+This script creates a plot for visualisation of both the peptide Bradykinin and the protein Ubiquitin. 
+Only Streamlit and Streamlit components are imported as libraries. With the function defined to generate a 
+JSmol viewer using JavaScript. Alongside the show function to allow the importation of this script when called upon 
+by the navigation menu. 
+"""
+
 import streamlit as st
 import streamlit.components.v1 as components 
 
-# Function to generate the HTML for JSmol viewer
-def generate_jsmol_html(pdb_id):
+# Function for the generation of the HTML for the JSmol viewer
+def generate_jsmol_html(pdb_id, display_mode="cartoon"):
     return f"""
+    <!-- Incorporates JSmol JavaScript library -->
     <script type="text/javascript" src="https://chemapps.stolaf.edu/jmol/jsmol/JSmol.min.js"></script>
+    
+    <!-- Initialises JSmol viewer with options for configuration --> 
     <script type="text/javascript">
-        Jmol.getApplet("jsmolApplet0", {{
-            width: 500,
+
+        // Generates new JSmol applet 
+        Jmol.getApplet("JSmolApplet1", {{
             height: 700,
-            use: "HTML5",
-            j2sPath: "https://chemapps.stolaf.edu/jmol/jsmol/j2s",
-            script: "load https://files.rcsb.org/view/{pdb_id}.pdb; cartoons only; color structure;"
+            width: 600,
+            use: "HTML5",                   // HTML5 used for rendering 
+            j2sPath: "https://chemapps.stolaf.edu/jmol/jsmol/j2s",  // File pathway for the JSmol JavaScript
+            script: "load https://files.rcsb.org/view/{pdb_id}.pdb; {display_mode} only; color structure;"    // Loads and applies visualisation settings to the PDB file
         }});
     </script>
-    <div id="jsmolApplet0" style="margin:auto;"></div>
+
+    <!-- Container defined to hold JSmol viewer --> 
+    <div id="JSmolApplet1" style="display: flex;"></div>
     """
 
-# Streamlit app to visualize a protein structure in 3D using JSmol
+# Streamlit feature to visualize peptide/protein structure in 3D using JSmol viewer
 def show():
     st.title("3D Protein Structure Visualization")
     st.markdown("Explore the 3D protein structure of Bradykinin as a peptide and the full protein structure of Ubiquitin.") 
     st.write("With structures directly taken from RCSB Protein Data Bank to provide a visual image of both a peptide structure and a protein structure.")
 
-    peptide_options = {"Ubiquitin", "Bradykinin"}
+    peptide_options = {"Bradykinin", "Ubiquitin"}
     selected_peptide = st.sidebar.selectbox("Select Peptide", peptide_options)
-                                        
+
+    # Sidebar to alllow user to select style of visualisation 
+    display_mode = st.sidebar.selectbox("Select the style of visualisation:",["Cartoon", "Spacefill"]
+    )
+
+    # PDB ID for specific peptide/protein
     peptide_pdb = {
         "Ubiquitin": '1UBQ',
         "Bradykinin": '6F3V', 
         
     }
-    # PDB ID for 6ZNS is hardcoded here
+    # Gets PDB ID when user selects peptide from dictionary above 
     pdb_id = peptide_pdb[selected_peptide]
 
-    # Generate the JSmol HTML
-    jsmol_html = generate_jsmol_html(pdb_id)
+    # Generates HTML JSmol viewer of selected peptide with chosen style 
+    content_html = generate_jsmol_html(pdb_id, display_mode)
+    # Embedding of the JSmol viewer into Streamlit app 
+    st.components.v1.html(content_html, height=650)
 
-    # Display the HTML with JSmol embedded
-    st.components.v1.html(jsmol_html, height=650, width=550)
-
-# Example of how to use this in your Streamlit navigation
 if __name__ == "__main__":
     show()
 

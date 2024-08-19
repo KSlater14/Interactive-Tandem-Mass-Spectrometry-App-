@@ -24,7 +24,7 @@ This project is an interactive web application developed and designed for explor
 
 The **Interactive Parameter Explorer** is the main page of the application. Users are able to interactively adjust parameters of provided data and observe real-time updates on Spectra. As well as the ability to upload their own data for exploration. Users can explore various settings and their effects on the data. 
 
-For the code of the Interactive Parameter Explorer, see the [Interactive_Parameter_Explorer.py](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/Interactive_Parameter_Explorer.py) file. 
+For the Interactive Parameter Explorer code, see the [Interactive_Parameter_Explorer.py](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/Interactive_Parameter_Explorer.py) file. 
 
 ## Peptide Explorer 
 
@@ -34,7 +34,7 @@ For the code of the Peptide Explorer, see the [Peptide_Explorer.py](https://gith
 
 ## Isolation Window 
 
-The **Isolation Window** page allows users to adjust the isolation window settings (Centre and Width of the isolation window) to observe how these adjustments affect the visualisation of the mass spectrometry data. 
+The **Isolation Window** page allows users to adjust the isolation window settings (centre and width of the isolation window) to observe how these adjustments affect the visualisation of the MS data. 
 
 For the code of the Isolation Window, see the [Isolation_Window.py](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/pages/Isolation_Window.py) file. 
 
@@ -44,7 +44,7 @@ The **Fragment Visualisation** page contains two sub-sections:
 
 ### 2D Fragment Visualisation 
 This sections allows users to visualise peptide fragments in 2D. The key features include:
-- Interactive plots for fragment ions linking to the ions to the peptide sequence. 
+- Interactive plots for fragment ions linking the ions to the peptide sequence. 
 - Hover tooltips for detailed fragment information. 
 - The customisation of the charge state parameter. 
 
@@ -53,7 +53,7 @@ This section provides visualisations specifically for the Bradykinin peptide and
 
 For the code of the Fragment Visualisation, see the [Fragment_visualisation.py](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/pages/Fragment_visualisation.py) file. 
 For the code of the 2D Fragment Visualisation, see the [fragment_visualisation_2d.py](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/pages/Fragment_visualisation_pages/fragment_visualisation_2d.py) file. 
-For the code of the Peptide and Protein Visualisation, see the code [Peptide_and_protein_visualisation.py](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/pages/Fragment_visualisation_pages/Peptide_and_protein_visualisation.py) file. 
+For the code of the Peptide and Protein Visualisation, see the[Peptide_and_protein_visualisation.py](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/pages/Fragment_visualisation_pages/Peptide_and_protein_visualisation.py) file. 
 
 ## Requirements 
 
@@ -96,11 +96,11 @@ Access the application via the URL provided by Streamlit.
 ## Usage 
 - Interactive Parameter Explorer: Adjust parameters and observe spectra changes in real-time. 
 - Peptide Explorer: Select peptide and analyse fragmentation pattern. 
-- Isolation Window: Modify and view the isolation window. 
-- Fragment Visualisation: Use the 2D and protein/peptide visualisation tools to visualise ion fragmentation and protein structure. 
+- Isolation Window: Modify and view the isolation window to identify the m/z range for further analysis. 
+- Fragment Visualisation: Use the 2D and peptide and protein visualisation tools to visualise ion fragmentation and protein structure. 
 
 ## Data
-The application uses mzML files for mass spectrometry data. The data files used for the application are all included in the repository. You can find and download them from the following directory:
+The application uses mzML files for MS data. The data files used by the application are all included in the repository. You can find and download them from the following directory:
 
 - [Data Directory](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/tree/main/Data)
 
@@ -109,13 +109,13 @@ Contributions are welcome! Please fork the repository and submit pull requests w
 1. Fork the Repository.
 2. Clone Your Fork:
 ```bash
-git clone <your-fork-url>
+git clone <fork-url>
 ```
 3. Create a Branch:
 ```bash
 git checkout -b feature-branch
 ```
-4. Make Your Changes.
+4. Make the Changes.
 5. Push to Your Fork:
 ```bash
 git add
@@ -128,7 +128,7 @@ git push origin feature-branch
 This project is licensed under the MIT License- see the [LICENSE](https://github.com/KSlater14/Interactive-Tandem-Mass-Spectrometry-App-/blob/main/__init__.py) file for details. 
 
 ## Acknowledgments 
-Jedd Bellamy-Carter for his contribution to the app. 
+Thank you to Jedd Bellamy-Carter for his contribution to the app. 
 Bokeh for interactive plotting. 
 Streamlit for building the web app interface. 
 Pyteomics for handling mass spectrometry data. 

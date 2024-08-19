@@ -1,6 +1,8 @@
 ## ISOLATION WINDOW ##
 """
-
+This script is used to visualise the m/z range that should be isolated for further analysis, this is the isolation window. 
+Again imported are the necessary libraries. The functions defined in this script are average spectra, download files, plot the spectrum and
+importantly, the tophat filter. One specific MRFA file is used in this script. 
 """
 
 import streamlit as st
@@ -35,6 +37,7 @@ MRFA_url = "https://raw.githubusercontent.com/KSlater14/Interactive-Tandem-Mass-
 if not os.path.isfile(MRFA_file_path):
     load_MRFA_file(MRFA_url, MRFA_file_path)
 
+# Average spectra function 
 def average_spectra(spectra, filter_string=None, bin_width=None):
     reference_scan = np.unique(spectra[0]['m/z array'])
     if bin_width is None:
@@ -63,7 +66,7 @@ def average_spectra(spectra, filter_string=None, bin_width=None):
 
     return avg_spectrum
 
-
+# Plots spectrum 
 def plot_spectrum(MRFA_file, isolation_width, isolation_centre):
     reader = mzml.read(MRFA_file, use_index=True)
     spectra = list(reader)
@@ -92,8 +95,10 @@ def plot_spectrum(MRFA_file, isolation_width, isolation_centre):
                tools='pan,box_zoom,xbox_zoom,reset,save',
                active_drag='xbox_zoom')
     
-    _plot.line('_mzs', 'intensities', source=source_original, legend_label='Original Intensity', color=Spectral11[0], alpha=0.3, line_width=2)
-    _plot.line('_mzs', 'filtered_intensities', source=source_filtered, legend_label='Filtered Intensity', color=Spectral11[1], line_dash='dashed', line_width=2)
+    _plot.line('_mzs', 'intensities', 
+               source=source_original, legend_label='Original Intensity', color=Spectral11[0], alpha=0.3, line_width=2)
+    _plot.line('_mzs', 'filtered_intensities', 
+               source=source_filtered, legend_label='Filtered Intensity', color=Spectral11[1], line_dash='dashed', line_width=2)
 
     _plot.legend.location = "top_left"
     _plot.legend.background_fill_color = 'pink'
@@ -105,18 +110,23 @@ def plot_spectrum(MRFA_file, isolation_width, isolation_centre):
 
     return _plot
 
-
+# Tophat filter 
 def tophat(centre, width, x_values):
+    # Stores the filter output, initialised to zero
     y_values = np.zeros_like(x_values)
+    # Sets the lower boundary of tophat filter 
     lowerl = centre - (width / 2)
+    # Sets the upper boundary of tophat filter
     upperl = centre + (width / 2)  
+    # Applies the filter 
     y_values[(x_values > lowerl) & (x_values < upperl)] = 1
+    
     return y_values
 
 
 st.title("Isolation Window Visualisation")
 
-
+# Isolation and Instruction tab 
 Isolation_tab, Instruction_tab = st.tabs(["Isolation Window", "Instructions"])
 
 with Instruction_tab:
@@ -131,6 +141,7 @@ with Isolation_tab:
     st.sidebar.title("Isolation Window Visualisation")
     st.sidebar.markdown("Explore the impact of the isolation centre and width on the isolation window.")
 
+    # Configures the sidebar settings 
     isolation_centre = st.sidebar.number_input(
         "Select the centrepoint value (m/z) of the isolation window",
         min_value=1.0,

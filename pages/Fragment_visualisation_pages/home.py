@@ -26,4 +26,13 @@ def show():
               For the best view of each plot, expand to full screen. 
              
               * Bradykinin and Ubiquitin plots taken directly from the Research Collaboratory for Structural Bioinformatics Protein Data Bank (RCSB PDB). 
+              
+             
+             Important: Neutral loss ions 
+              Loss of neutral fragments during fragmentation in MS. This neutral fragment loss is reflected via a change in the remaining ion's mass. 
+              These neutral fragments include Water and Ammonia:
+              * Loss of Water (H$_2$O): Loss of H$_2$O, often observed during peptide fragmentation, indicates the dehydration of backbone structures or side chains,
+              or the cleavage of peptide bonds. 
+              * Loss of Ammonia (NH$_3$): Loss of NH$_3$, again observed during peptide fragmentation, indicates the presence of the basic residues 
+             like histidine, lysine or arginine. 
                 """)
