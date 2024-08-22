@@ -1,11 +1,11 @@
-- Python 3.x 
-- streamlit 
-- bokeh
-- numpy
-- pandas
-- scipy
-- pynumpress
-- pyteomics
-- requests
-- io 
-- os 
+Python 3.x 
+streamlit
+numpy==1.25.0
+bokeh==2.4.3
+pandas
+scipy
+pynumpress
+pyteomics
+requests
+io 
+os 
