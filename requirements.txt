@@ -1,10 +1,10 @@
--streamlit 
--bokeh
--numpy
--pandas
--scipy
--pynumpress
--pyteomics
--requests
--io 
--os 
+- streamlit 
+- bokeh
+- numpy
+- pandas
+- scipy
+- pynumpress
+- pyteomics
+- requests
+- io 
+- os 
