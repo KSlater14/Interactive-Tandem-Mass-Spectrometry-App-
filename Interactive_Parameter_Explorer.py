@@ -9,6 +9,7 @@ import streamlit as st
 import numpy as np
 import requests
 import io
+import bokeh
 from bokeh.models import ColumnDataSource, LabelSet, HoverTool, Range1d
 from bokeh.plotting import figure
 from pyteomics import mzml, mass, parser
