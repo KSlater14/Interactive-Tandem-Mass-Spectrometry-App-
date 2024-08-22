@@ -6,5 +6,3 @@ scipy
 pynumpress
 pyteomics
 requests
-io 
-os 
