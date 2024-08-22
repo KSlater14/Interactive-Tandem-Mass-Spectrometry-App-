@@ -6,4 +6,3 @@ scipy
 pynumpress
 pyteomics
 requests
-distutils
