@@ -1,11 +1,11 @@
 Python 3
-streamlit==1.10.0
-numpy==1.21.4
-bokeh==2.4.3
+streamlit 
+bokeh
+numpy
 pandas
-scipy==1.7.1
+scipy
 pynumpress
-pyteomics==4.2.0
-requests==2.26.0
+pyteomics
+requests
 io 
 os 
